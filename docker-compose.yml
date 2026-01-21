@@ -1,0 +1,66 @@
+services:
+  # PostgreSQL database
+  postgres:
+    image: postgres:15-alpine
+    container_name: ndt-postgres
+    environment:
+      POSTGRES_DB: ${DB_NAME:-ndtdb}
+      POSTGRES_USER: ${DB_USER:-max}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-1234}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+    ports:
+      - '5433:5432'
+    networks:
+      - ndt-network
+    restart: unless-stopped
+
+  # Node positions API server
+  node-positions-api:
+    build:
+      context: .
+      dockerfile: server/Dockerfile
+    container_name: ndt-node-positions-api
+    environment:
+      - DB_HOST=${DB_HOST:-postgres}
+      - DB_PORT=${DB_PORT:-5432}
+      - DB_NAME=${DB_NAME:-ndtdb}
+      - DB_USER=${DB_USER:-max}
+      - DB_PASSWORD=${DB_PASSWORD:-1234}
+      - SERVER_PORT=${SERVER_PORT:-3001}
+    ports:
+      - '3001:3001'
+    depends_on:
+      - postgres
+    networks:
+      - ndt-network
+    restart: unless-stopped
+
+  # NDT frontend GUI
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        - NDT_API_BASE_URL=${NDT_API_BASE_URL:-http://192.168.64.8:8000}
+        - VITE_NODE_POSITIONS_API_URL=${VITE_NODE_POSITIONS_API_URL:-http://localhost:3001}
+    container_name: ndt-frontend
+    environment:
+      - VITE_NDT_API_BASE_URL=${NDT_API_BASE_URL:-http://192.168.64.8:8000}
+      - VITE_NODE_POSITIONS_API_URL=${VITE_NODE_POSITIONS_API_URL:-http://localhost:3001}
+    ports:
+      - '3000:3000'
+    depends_on:
+      - postgres
+      - node-positions-api
+    networks:
+      - ndt-network
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+
+networks:
+  ndt-network:
+    driver: bridge

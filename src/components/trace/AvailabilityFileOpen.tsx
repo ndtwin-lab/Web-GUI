@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { LargeFileProcessor } from '../../utils/LargeFileProcessor';
 import LargeFileOpenGuide from '../LargeFileOpenGuide';
 
-interface TraceFileOpenProps {
+interface AvailabilityFileOpenProps {
   onFlowDataOpen: (file: File) => Promise<void>;
   onGraphDataOpen: (file: File) => Promise<void>;
   flowDataFile: File | null;
@@ -22,7 +22,7 @@ interface TraceFileOpenProps {
   onAbortOpen?: () => void;
 }
 
-const TraceFileOpen: React.FC<TraceFileOpenProps> = ({
+const AvailabilityFileOpen: React.FC<AvailabilityFileOpenProps> = ({
   onFlowDataOpen,
   onGraphDataOpen,
   flowDataFile,
@@ -320,4 +320,4 @@ const TraceFileOpen: React.FC<TraceFileOpenProps> = ({
   );
 };
 
-export default TraceFileOpen;
+export default AvailabilityFileOpen;

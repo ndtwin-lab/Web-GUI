@@ -1,6 +1,6 @@
 import React from 'react';
 
-export interface TraceFlowData {
+export interface AvailabilityFlowData {
   timestamp: string;
   src_ip: number;
   dst_ip: number;
@@ -19,7 +19,7 @@ export interface TraceFlowData {
   }>;
 }
 
-export interface TraceGraphData {
+export interface AvailabilityGraphData {
   timestamp: string;
   nodes: Array<{
     device_name: string;
@@ -56,14 +56,14 @@ export interface TraceGraphData {
   }>;
 }
 
-export interface TraceDataPoint {
+export interface AvailabilityDataPoint {
   timestamp: string;
-  data: TraceFlowData[] | TraceGraphData;
+  data: AvailabilityFlowData[] | AvailabilityGraphData;
 }
 
-export interface ParsedTraceData {
+export interface ParsedAvailabilityData {
   type: 'flow' | 'graph';
-  dataPoints: TraceDataPoint[];
+  dataPoints: AvailabilityDataPoint[];
   timeRange: {
     start: string;
     end: string;
@@ -76,17 +76,17 @@ export interface ParsedTraceData {
   };
 }
 
-export class TraceDataParser {
+export class AvailabilityDataParser {
   /**
    * Parse JSON Lines format history data (each line is a JSON object)
    */
   static parseJSONLines(
     content: string,
     type: 'flow' | 'graph'
-  ): ParsedTraceData {
+  ): ParsedAvailabilityData {
     try {
       const lines = content.trim().split('\n');
-      const dataPoints: TraceDataPoint[] = [];
+      const dataPoints: AvailabilityDataPoint[] = [];
       let minTimestamp = Infinity;
       let maxTimestamp = 0;
       let baseTimestamp = 0;
@@ -255,7 +255,7 @@ export class TraceDataParser {
   /**
    * Parse JSON format history data (legacy support)
    */
-  static parseJSON(content: string): ParsedTraceData {
+  static parseJSON(content: string): ParsedAvailabilityData {
     try {
       const data = JSON.parse(content);
 
@@ -280,7 +280,7 @@ export class TraceDataParser {
   /**
    * Parse CSV format history data
    */
-  static parseCSV(content: string): ParsedTraceData {
+  static parseCSV(content: string): ParsedAvailabilityData {
     try {
       const lines = content.trim().split('\n');
       const headers = lines[0].split(',').map(h => h.trim());
@@ -297,7 +297,7 @@ export class TraceDataParser {
         throw new Error('No timestamp column found in CSV');
       }
 
-      const dataPoints: TraceDataPoint[] = [];
+      const dataPoints: AvailabilityDataPoint[] = [];
 
       for (let i = 1; i < lines.length; i++) {
         const values = lines[i].split(',').map(v => v.trim());
@@ -306,7 +306,7 @@ export class TraceDataParser {
 
           // Create a basic data point structure
           // You'll need to customize this based on your actual CSV format
-          const dataPoint: TraceDataPoint = {
+          const dataPoint: AvailabilityDataPoint = {
             timestamp,
             data: [],
           };
@@ -337,7 +337,7 @@ export class TraceDataParser {
   /**
    * Parse text format history data
    */
-  static parseText(content: string): ParsedTraceData {
+  static parseText(content: string): ParsedAvailabilityData {
     try {
       const lines = content
         .trim()
@@ -363,12 +363,12 @@ export class TraceDataParser {
   /**
    * Parse custom text format
    */
-  private static parseCustomTextFormat(content: string): ParsedTraceData {
+  private static parseCustomTextFormat(content: string): ParsedAvailabilityData {
     const lines = content
       .trim()
       .split('\n')
       .filter(line => line.trim());
-    const dataPoints: TraceDataPoint[] = [];
+    const dataPoints: AvailabilityDataPoint[] = [];
 
     // This is a placeholder implementation
     // You'll need to customize this based on your actual text format
@@ -381,7 +381,7 @@ export class TraceDataParser {
         Date.now() - (lines.length - i) * 60000
       ).toISOString();
 
-      const dataPoint: TraceDataPoint = {
+      const dataPoint: AvailabilityDataPoint = {
         timestamp,
         data: [],
       };
@@ -408,8 +408,8 @@ export class TraceDataParser {
   /**
    * Parse array format JSON
    */
-  private static parseArrayFormat(data: any[]): ParsedTraceData {
-    const dataPoints: TraceDataPoint[] = data.map((item, index) => ({
+  private static parseArrayFormat(data: any[]): ParsedAvailabilityData {
+    const dataPoints: AvailabilityDataPoint[] = data.map((item, index) => ({
       timestamp:
         item.timestamp ||
         new Date(Date.now() - (data.length - index) * 60000).toISOString(),
@@ -435,8 +435,8 @@ export class TraceDataParser {
   /**
    * Parse object format JSON
    */
-  private static parseObjectFormat(data: any): ParsedTraceData {
-    const dataPoints: TraceDataPoint[] = data.dataPoints.map(
+  private static parseObjectFormat(data: any): ParsedAvailabilityData {
+    const dataPoints: AvailabilityDataPoint[] = data.dataPoints.map(
       (item: any, index: number) => ({
         timestamp:
           item.timestamp ||
@@ -466,8 +466,8 @@ export class TraceDataParser {
   /**
    * Parse timestamp format JSON
    */
-  private static parseTimestampFormat(data: any): ParsedTraceData {
-    const dataPoints: TraceDataPoint[] = data.timestamps.map(
+  private static parseTimestampFormat(data: any): ParsedAvailabilityData {
+    const dataPoints: AvailabilityDataPoint[] = data.timestamps.map(
       (timestamp: string, index: number) => ({
         timestamp,
         data: data.flows?.[index] || data.data?.[index] || [],
@@ -494,9 +494,9 @@ export class TraceDataParser {
    * Get data point at specific timestamp
    */
   static getDataAtTimestamp(
-    data: ParsedTraceData,
+    data: ParsedAvailabilityData,
     timestamp: string
-  ): TraceDataPoint | null {
+  ): AvailabilityDataPoint | null {
     return data.dataPoints.find(point => point.timestamp === timestamp) || null;
   }
 
@@ -504,10 +504,10 @@ export class TraceDataParser {
    * Get data points within time range
    */
   static getDataInTimeRange(
-    data: ParsedTraceData,
+    data: ParsedAvailabilityData,
     start: string,
     end: string
-  ): TraceDataPoint[] {
+  ): AvailabilityDataPoint[] {
     const startTime = new Date(start).getTime();
     const endTime = new Date(end).getTime();
 
@@ -521,9 +521,9 @@ export class TraceDataParser {
    * Get nearest data point to a timestamp
    */
   static getNearestDataPoint(
-    data: ParsedTraceData,
+    data: ParsedAvailabilityData,
     timestamp: string
-  ): TraceDataPoint | null {
+  ): AvailabilityDataPoint | null {
     if (data.dataPoints.length === 0) return null;
 
     const targetTime = new Date(timestamp).getTime();
@@ -546,7 +546,7 @@ export class TraceDataParser {
   /**
    * Validate parsed data
    */
-  static validateData(data: ParsedTraceData): {
+  static validateData(data: ParsedAvailabilityData): {
     isValid: boolean;
     errors: string[];
   } {
@@ -575,4 +575,4 @@ export class TraceDataParser {
   }
 }
 
-export default TraceDataParser;
+export default AvailabilityDataParser;

@@ -8,7 +8,7 @@ import React, {
 } from 'react';
 import ReactECharts from 'echarts-for-react';
 import { useTranslation } from 'react-i18next';
-import type { TraceFlowData } from './TraceDataParser';
+import type { AvailabilityFlowData } from './AvailabilityDataParser';
 import { getIpString } from '../../utils/formatters';
 import { formatBandwidth as formatRate } from '../../utils/formatters';
 import Draggable from 'react-draggable';
@@ -37,18 +37,16 @@ const commonPorts = [
   { port: 8443, protocol: 'HTTPS-ALT' },
 ];
 
-interface FlowType {
-  src_ip: number;
-  dst_ip: number;
-  protocol_number?: number;
-  protocol_id?: number;
-  src_port?: number;
-  dst_port?: number;
-}
-
-interface TraceFlowStackedGraphProps {
-  selectedFlows: FlowType[];
-  flowData: TraceFlowData[];
+interface AvailabilityPerLinkFlowGraphProps {
+  selectedFlows: Array<{
+    src_ip: number;
+    dst_ip: number;
+    protocol_number?: number;
+    protocol_id?: number;
+    src_port?: number;
+    dst_port?: number;
+  }>;
+  flowData: AvailabilityFlowData[];
   currentTime: string;
   onClose: () => void;
   isLoading?: boolean;
@@ -61,14 +59,14 @@ function getPortLabel(port?: number) {
   return found ? `${port} (${found.protocol})` : port.toString();
 }
 
-function TraceFlowStackedGraph({
+function AvailabilityPerLinkFlowGraph({
   selectedFlows,
   flowData,
   currentTime,
   onClose,
   isLoading = false,
   totalTimePoints = 0,
-}: TraceFlowStackedGraphProps) {
+}: AvailabilityPerLinkFlowGraphProps) {
   const { t } = useTranslation();
   const nodeRef = useRef<HTMLDivElement>(null);
   const chartRef = useRef<any>(null);
@@ -89,7 +87,7 @@ function TraceFlowStackedGraph({
     });
 
     // Group flow data by timestamp
-    const flowDataByTime = new Map<string, TraceFlowData[]>();
+    const flowDataByTime = new Map<string, AvailabilityFlowData[]>();
     const timeSet = new Set<string>();
 
     filteredFlowData.forEach(flow => {
@@ -130,6 +128,7 @@ function TraceFlowStackedGraph({
           return formattedTime === timePoint;
         });
 
+        // Always return a value (0 if no data found)
         if (!timestamp) return 0;
 
         const flowsAtTime = flowDataByTime.get(timestamp) || [];
@@ -149,29 +148,23 @@ function TraceFlowStackedGraph({
           : 0;
       });
 
-      const proto =
-        flow.protocol_number !== undefined
-          ? protocolMap[flow.protocol_number] || flow.protocol_number
-          : 'Any';
-      const src = getIpString(flow.src_ip);
-      const dst = getIpString(flow.dst_ip);
-      const sport = getPortLabel(flow.src_port);
-      const dport = getPortLabel(flow.dst_port);
-      const name = `${src}:${sport} → ${dst}:${dport} (${proto})`;
+      const key = `${flow.src_ip}-${flow.dst_ip}-${flow.protocol_number ?? flow.protocol_id ?? ''}-${flow.src_port ?? ''}-${flow.dst_port ?? ''}`;
+      const name =
+        `${getIpString(flow.src_ip)}:${getPortLabel(flow.src_port)} → ${getIpString(flow.dst_ip)}:${getPortLabel(flow.dst_port)} (` +
+        `${protocolMap[(flow.protocol_number ?? flow.protocol_id)!] ?? flow.protocol_number ?? flow.protocol_id})`;
 
       return {
         name,
         type: 'line',
-        stack: 'total',
         data,
         smooth: true,
         lineStyle: { color: COLORS[idx], width: 2 },
         itemStyle: { color: COLORS[idx] },
-        areaStyle: { color: COLORS[idx] + '55' },
-        emphasis: { focus: 'series' },
+        areaStyle: { color: COLORS[idx] + '33' },
+        id: key,
         symbol: 'circle',
         symbolSize: 4,
-        id: `flow-${idx}`,
+        connectNulls: true,
       };
     });
 
@@ -200,13 +193,13 @@ function TraceFlowStackedGraph({
         formatter: (params: any) => {
           let s = `<b>${params[0].axisValue}</b><br/>`;
           params.forEach((p: any) => {
-            s += `<span style='color:${p.color}'>●</span> <b>${p.seriesName}</b>: ${formatRate(p.value)}<br/>`;
+            s += `<span style='color:${p.color}'>●</span> ${p.seriesName}: <b>${formatRate(p.value)}</b><br/>`;
           });
           return s;
         },
       },
       legend: {
-        data: processedData.series.map(s => s.name),
+        data: processedData.series.map((s: any) => s.name),
         top: 2,
         type: 'scroll',
         pageButtonItemGap: 5,
@@ -335,7 +328,7 @@ function TraceFlowStackedGraph({
         >
           <div className="drag-handle mb-2 flex cursor-move items-center justify-between">
             <h2 className="text-xl font-bold text-gray-800">
-              {t('linkFlow.totalFlowBandwidthUsage')} - Availability status
+              {t('linkFlow.flowBandwidthUsage')} - Availability status
             </h2>
             <button
               onClick={onClose}
@@ -367,7 +360,7 @@ function TraceFlowStackedGraph({
       >
         <div className="drag-handle mb-2 flex cursor-move items-center justify-between">
           <h2 className="text-xl font-bold text-gray-800">
-            {t('linkFlow.totalFlowBandwidthUsage')} - Availability status
+            {t('linkFlow.flowBandwidthUsage')} - Trace
           </h2>
           <button
             onClick={onClose}
@@ -404,4 +397,4 @@ function TraceFlowStackedGraph({
   );
 }
 
-export default memo(TraceFlowStackedGraph);
+export default memo(AvailabilityPerLinkFlowGraph);

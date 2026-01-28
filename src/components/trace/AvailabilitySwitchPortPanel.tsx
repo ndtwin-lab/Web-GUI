@@ -8,7 +8,7 @@ import {
   HiOutlineInformationCircle,
 } from 'react-icons/hi';
 import { FaEthernet, FaNetworkWired, FaLink } from 'react-icons/fa';
-import type { HistoryFlowData, HistoryGraphData } from './TraceDataManager';
+import type { HistoryFlowData, HistoryGraphData } from './AvailabilityDataManager';
 
 interface PortInfo {
   portNumber: number;

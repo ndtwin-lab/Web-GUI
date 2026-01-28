@@ -8,19 +8,19 @@ import {
   HiOutlineInformationCircle,
 } from 'react-icons/hi';
 import { FaEthernet, FaNetworkWired, FaLink } from 'react-icons/fa';
-import type { TraceFlowData, TraceGraphData } from './TraceDataParser';
+import type { AvailabilityFlowData, AvailabilityGraphData } from './AvailabilityDataParser';
 
-interface TraceDeviceInformationProps {
+interface AvailabilityDeviceInformationProps {
   data: string | number | null;
-  flowData: TraceFlowData[];
-  graphData?: TraceGraphData | null;
+  flowData: AvailabilityFlowData[];
+  graphData?: AvailabilityGraphData | null;
   currentTime: string;
   onClose: () => void;
   onShowSwitchPorts?: () => void;
   isSwitchPortsVisible?: boolean;
 }
 
-function TraceDeviceInformation({
+function AvailabilityDeviceInformation({
   data,
   flowData,
   graphData,
@@ -28,7 +28,7 @@ function TraceDeviceInformation({
   onClose,
   onShowSwitchPorts,
   isSwitchPortsVisible,
-}: TraceDeviceInformationProps) {
+}: AvailabilityDeviceInformationProps) {
   const { t } = useTranslation();
   const nodeRef = useRef<HTMLDivElement>(null);
 
@@ -202,4 +202,4 @@ function TraceDeviceInformation({
   );
 }
 
-export default TraceDeviceInformation;
+export default AvailabilityDeviceInformation;

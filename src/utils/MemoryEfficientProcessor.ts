@@ -1,8 +1,8 @@
 import {
-  TraceDataParser,
-  type ParsedTraceData,
-  type TraceDataPoint,
-} from '../components/trace/TraceDataParser';
+  AvailabilityDataParser,
+  type ParsedAvailabilityData,
+  type AvailabilityDataPoint,
+} from '../components/trace/AvailabilityDataParser';
 
 export interface MemoryEfficientProcessorOptions {
   onProgress?: (progress: {
@@ -44,7 +44,7 @@ export class MemoryEfficientProcessor {
   async processFile(
     file: File,
     type: 'flow' | 'graph'
-  ): Promise<ParsedTraceData> {
+  ): Promise<ParsedAvailabilityData> {
     this.abortController = new AbortController();
 
     try {
@@ -88,7 +88,7 @@ export class MemoryEfficientProcessor {
   private async processFileInMemory(
     file: File,
     type: 'flow' | 'graph'
-  ): Promise<ParsedTraceData> {
+  ): Promise<ParsedAvailabilityData> {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
 
@@ -109,8 +109,8 @@ export class MemoryEfficientProcessor {
 
           const parsedData =
             type === 'flow'
-              ? TraceDataParser.parseJSONLines(content, 'flow')
-              : TraceDataParser.parseJSONLines(content, 'graph');
+              ? AvailabilityDataParser.parseJSONLines(content, 'flow')
+              : AvailabilityDataParser.parseJSONLines(content, 'graph');
 
           if (
             !parsedData ||
@@ -147,7 +147,7 @@ export class MemoryEfficientProcessor {
   private async processLargeFileWithIndexing(
     file: File,
     type: 'flow' | 'graph'
-  ): Promise<ParsedTraceData> {
+  ): Promise<ParsedAvailabilityData> {
     const stream = file.stream();
     const reader = stream.getReader();
     const decoder = new TextDecoder();
@@ -155,7 +155,7 @@ export class MemoryEfficientProcessor {
     let buffer = '';
     let totalBytesRead = 0;
     let lineOffset = 0;
-    const dataPoints: TraceDataPoint[] = [];
+    const dataPoints: AvailabilityDataPoint[] = [];
     let minTimestamp = Infinity;
     let maxTimestamp = 0;
 
@@ -314,7 +314,7 @@ export class MemoryEfficientProcessor {
               }
 
               // Create indexed data point
-              const dataPoint: TraceDataPoint = {
+              const dataPoint: AvailabilityDataPoint = {
                 timestamp: timestampIso,
                 data,
               };
@@ -450,7 +450,7 @@ export class MemoryEfficientProcessor {
   /**
    * Get data at specific timestamp with fast random access
    */
-  getDataAtTimestamp(timestamp: string): TraceDataPoint | null {
+  getDataAtTimestamp(timestamp: string): AvailabilityDataPoint | null {
     if (!this.options.enableIndexing) {
       console.warn(
         'Indexing is not enabled. Use processFile with enableIndexing: true'
@@ -478,7 +478,7 @@ export class MemoryEfficientProcessor {
   /**
    * Get nearest data point to a timestamp
    */
-  getNearestDataAtTimestamp(timestamp: string): TraceDataPoint | null {
+  getNearestDataAtTimestamp(timestamp: string): AvailabilityDataPoint | null {
     if (!this.options.enableIndexing || this.dataIndex.length === 0) {
       return null;
     }

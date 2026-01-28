@@ -6,14 +6,14 @@ import PerLinkFlowGraph from './PerLinkFlowGraph';
 import FlowStackedGraph from './FlowStackedGraph';
 import SwitchPortPanel from './SwitchPortPanel';
 import FlowInformation from './FlowInformation';
-import TraceDeviceInformation from './trace/TraceDeviceInformation';
-import TraceLinkInformation from './trace/TraceLinkInformation';
-import TraceLinkInformationAll from './trace/TraceLinkInformationAll';
-import TraceFlowInformation from './trace/TraceFlowInformation';
-import TraceLinkFlowInformation from './trace/TraceLinkFlowInformation';
-import TracePerLinkFlowGraph from './trace/TracePerLinkFlowGraph';
-import TraceFlowStackedGraph from './trace/TraceFlowStackedGraph';
-import TraceSwitchPortPanel from './trace/TraceSwitchPortPanel';
+import AvailabilityDeviceInformation from './trace/AvailabilityDeviceInformation';
+import AvailabilityLinkInformation from './trace/AvailabilityLinkInformation';
+import AvailabilityLinkInformationAll from './trace/AvailabilityLinkInformationAll';
+import AvailabilityFlowInformation from './trace/AvailabilityFlowInformation';
+import AvailabilityLinkFlowInformation from './trace/AvailabilityLinkFlowInformation';
+import AvailabilityPerLinkFlowGraph from './trace/AvailabilityPerLinkFlowGraph';
+import AvailabilityFlowStackedGraph from './trace/AvailabilityFlowStackedGraph';
+import AvailabilitySwitchPortPanel from './trace/AvailabilitySwitchPortPanel';
 
 export interface Panel {
   id: string;
@@ -128,7 +128,7 @@ const PanelManager: React.FC<PanelManagerProps> = ({
         if (traceFlowData && traceGraphData && currentTime) {
           return (
             <div key={panel.id} {...commonProps}>
-              <TraceDeviceInformation
+              <AvailabilityDeviceInformation
                 data={panel.data}
                 flowData={traceFlowData}
                 graphData={traceGraphData}
@@ -177,7 +177,7 @@ const PanelManager: React.FC<PanelManagerProps> = ({
         if (traceFlowData && traceGraphData && currentTime) {
           return (
             <div key={panel.id} {...commonProps}>
-              <TraceLinkFlowInformation
+              <AvailabilityLinkFlowInformation
                 data={panel.data}
                 flowData={traceFlowData}
                 graphData={traceGraphData}
@@ -241,7 +241,7 @@ const PanelManager: React.FC<PanelManagerProps> = ({
       case 'traceFlow':
         return (
           <div key={panel.id} {...commonProps}>
-            <TraceFlowInformation
+            <AvailabilityFlowInformation
               flowData={panel.data.flowData}
               currentTime={panel.data.currentTime}
               onClose={() => onPanelClose(panel.id)}
@@ -264,7 +264,7 @@ const PanelManager: React.FC<PanelManagerProps> = ({
       case 'traceLinkFlow':
         return traceFlowData && traceGraphData && currentTime ? (
           <div key={panel.id} {...commonProps}>
-            <TraceLinkFlowInformation
+            <AvailabilityLinkFlowInformation
               data={panel.data}
               flowData={traceFlowData}
               graphData={traceGraphData}
@@ -285,7 +285,7 @@ const PanelManager: React.FC<PanelManagerProps> = ({
       case 'traceLinkInfo':
         return traceFlowData && traceGraphData && currentTime ? (
           <div key={panel.id} {...commonProps}>
-            <TraceLinkInformation
+            <AvailabilityLinkInformation
               data={panel.data}
               flowData={traceFlowData}
               graphData={traceGraphData}
@@ -300,7 +300,7 @@ const PanelManager: React.FC<PanelManagerProps> = ({
       case 'traceLinkInfoAll':
         return traceFlowData && traceGraphData && currentTime ? (
           <div key={panel.id} {...commonProps}>
-            <TraceLinkInformationAll
+            <AvailabilityLinkInformationAll
               data={panel.data}
               flowData={traceFlowData}
               graphData={traceGraphData}
@@ -315,7 +315,7 @@ const PanelManager: React.FC<PanelManagerProps> = ({
       case 'tracePerLinkFlow':
         return traceFlowData && currentTime ? (
           <div key={panel.id} {...commonProps}>
-            <TracePerLinkFlowGraph
+            <AvailabilityPerLinkFlowGraph
               selectedFlows={panel.data}
               flowData={traceFlowData}
               currentTime={currentTime}
@@ -329,7 +329,7 @@ const PanelManager: React.FC<PanelManagerProps> = ({
       case 'traceFlowStacked':
         return traceFlowData && currentTime ? (
           <div key={panel.id} {...commonProps}>
-            <TraceFlowStackedGraph
+            <AvailabilityFlowStackedGraph
               selectedFlows={panel.data}
               flowData={traceFlowData}
               currentTime={currentTime}
@@ -346,7 +346,7 @@ const PanelManager: React.FC<PanelManagerProps> = ({
           onHighlightPortLink &&
           onClearPortHighlight ? (
           <div key={panel.id} {...commonProps}>
-            <TraceSwitchPortPanel
+            <AvailabilitySwitchPortPanel
               deviceId={panel.data}
               flowData={traceFlowData}
               graphData={traceGraphData}

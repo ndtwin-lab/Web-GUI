@@ -1,11 +1,11 @@
 import React, { useState, useCallback, useMemo, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
-  TraceDataParser,
-  type ParsedTraceData,
-  type TraceFlowData,
-  type TraceGraphData,
-} from './TraceDataParser';
+  AvailabilityDataParser,
+  type ParsedAvailabilityData,
+  type AvailabilityFlowData,
+  type AvailabilityGraphData,
+} from './AvailabilityDataParser';
 import {
   LargeFileProcessor,
   type OpenProgress,
@@ -17,16 +17,16 @@ import { TimeAxisManager } from '../../utils/TimeAxisManager';
 export type HistoryFlowData = any;
 export type HistoryGraphData = any;
 
-// Re-export types from TraceDataParser for convenience
+// Re-export types from AvailabilityDataParser for convenience
 export type {
-  TraceFlowData,
-  TraceGraphData,
-  ParsedTraceData,
-} from './TraceDataParser';
+  AvailabilityFlowData,
+  AvailabilityGraphData,
+  ParsedAvailabilityData,
+} from './AvailabilityDataParser';
 
-export interface TraceDataManagerState {
-  flowData: ParsedTraceData | null;
-  graphData: ParsedTraceData | null;
+export interface AvailabilityDataManagerState {
+  flowData: ParsedAvailabilityData | null;
+  graphData: ParsedAvailabilityData | null;
   currentTime: string;
   timeRange: {
     start: string;
@@ -39,17 +39,17 @@ export interface TraceDataManagerState {
   isOpening: boolean;
 }
 
-interface TraceDataManagerProps {
+interface AvailabilityDataManagerProps {
   children: (
-    state: TraceDataManagerState & {
+    state: AvailabilityDataManagerState & {
       openFlowData: (file: File) => Promise<void>;
       openGraphData: (file: File) => Promise<void>;
       clearData: () => void;
-      getCurrentFlowData: () => TraceFlowData[];
-      getCurrentGraphData: () => TraceGraphData | null;
-      getAllFlowData: () => TraceFlowData[];
+      getCurrentFlowData: () => AvailabilityFlowData[];
+      getCurrentGraphData: () => AvailabilityGraphData | null;
+      getAllFlowData: () => AvailabilityFlowData[];
       getAllFlowDataWithLoading: () => {
-        data: TraceFlowData[];
+        data: AvailabilityFlowData[];
         isLoading: boolean;
         totalTimePoints: number;
       };
@@ -63,12 +63,12 @@ interface TraceDataManagerProps {
       stopPlayback: () => void;
       setPlaybackSpeed: (speed: number) => void;
       getDataAtTime: (time: string) => {
-        flowData: TraceFlowData[];
-        graphData: TraceGraphData | null;
+        flowData: AvailabilityFlowData[];
+        graphData: AvailabilityGraphData | null;
       };
       getNearestDataAtTime: (time: string) => {
-        flowData: TraceFlowData[];
-        graphData: TraceGraphData | null;
+        flowData: AvailabilityFlowData[];
+        graphData: AvailabilityGraphData | null;
         actualTime: string;
       };
       abortOpen: () => void;
@@ -76,11 +76,11 @@ interface TraceDataManagerProps {
   ) => React.ReactNode;
 }
 
-const TraceDataManager: React.FC<TraceDataManagerProps> = ({ children }) => {
+const AvailabilityDataManager: React.FC<AvailabilityDataManagerProps> = ({ children }) => {
   const { t } = useTranslation();
 
-  const [flowData, setFlowData] = useState<ParsedTraceData | null>(null);
-  const [graphData, setGraphData] = useState<ParsedTraceData | null>(null);
+  const [flowData, setFlowData] = useState<ParsedAvailabilityData | null>(null);
+  const [graphData, setGraphData] = useState<ParsedAvailabilityData | null>(null);
   const [currentTime, setCurrentTime] = useState<string>('');
   const [timeRange, setTimeRange] = useState<{
     start: string;
@@ -492,4 +492,4 @@ const TraceDataManager: React.FC<TraceDataManagerProps> = ({ children }) => {
   );
 };
 
-export default TraceDataManager;
+export default AvailabilityDataManager;

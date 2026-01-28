@@ -10,7 +10,7 @@ import cytoscape from 'cytoscape';
 // @ts-expect-error - cytoscape-grid-guide module type issue
 import gridGuide from 'cytoscape-grid-guide';
 import { getIpString } from '../../utils/formatters';
-import type { HistoryFlowData, HistoryGraphData } from './TraceDataManager';
+import type { HistoryFlowData, HistoryGraphData } from './AvailabilityDataManager';
 import { getEdgeColorByUsage } from '../../utils/colorUtils';
 
 if (!cytoscape.prototype.hasInitialised) {
@@ -18,7 +18,7 @@ if (!cytoscape.prototype.hasInitialised) {
   cytoscape.prototype.hasInitialised = true;
 }
 
-interface TraceTopologyProps {
+interface AvailabilityTopologyProps {
   flowData: HistoryFlowData[];
   graphData?: HistoryGraphData | null;
   currentTime: string;
@@ -39,7 +39,7 @@ interface TraceTopologyProps {
   selectedEdgeId?: string | null;
 }
 
-export interface TraceTopologyRef {
+export interface AvailabilityTopologyRef {
   clearHighlights: () => void;
   clearHighlightedEdge: (edgeId: string) => void;
   clearHighlightedNode: (nodeId: string) => void;
@@ -229,7 +229,7 @@ function getFatTreePositions(
   return posObj;
 }
 
-const TraceTopology = forwardRef<TraceTopologyRef, TraceTopologyProps>(
+const AvailabilityTopology = forwardRef<AvailabilityTopologyRef, AvailabilityTopologyProps>(
   (
     {
       flowData,
@@ -947,4 +947,4 @@ const TraceTopology = forwardRef<TraceTopologyRef, TraceTopologyProps>(
   }
 );
 
-export default TraceTopology;
+export default AvailabilityTopology;

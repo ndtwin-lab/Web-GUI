@@ -1,7 +1,7 @@
 import {
-  TraceDataParser,
-  type ParsedTraceData,
-} from '../components/trace/TraceDataParser';
+  AvailabilityDataParser,
+  type ParsedAvailabilityData,
+} from '../components/trace/AvailabilityDataParser';
 
 export interface OpenProgress {
   loaded: number;
@@ -35,7 +35,7 @@ export class LargeFileProcessor {
   async processFile(
     file: File,
     type: 'flow' | 'graph'
-  ): Promise<ParsedTraceData> {
+  ): Promise<ParsedAvailabilityData> {
     this.abortController = new AbortController();
 
     try {
@@ -79,7 +79,7 @@ export class LargeFileProcessor {
   private async processFileInMemory(
     file: File,
     type: 'flow' | 'graph'
-  ): Promise<ParsedTraceData> {
+  ): Promise<ParsedAvailabilityData> {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
 
@@ -100,8 +100,8 @@ export class LargeFileProcessor {
 
           const parsedData =
             type === 'flow'
-              ? TraceDataParser.parseJSONLines(content, 'flow')
-              : TraceDataParser.parseJSONLines(content, 'graph');
+              ? AvailabilityDataParser.parseJSONLines(content, 'flow')
+              : AvailabilityDataParser.parseJSONLines(content, 'graph');
 
           if (
             !parsedData ||
@@ -138,7 +138,7 @@ export class LargeFileProcessor {
   private async processLargeFileStreaming(
     file: File,
     type: 'flow' | 'graph'
-  ): Promise<ParsedTraceData> {
+  ): Promise<ParsedAvailabilityData> {
     const stream = file.stream();
     const reader = stream.getReader();
     const decoder = new TextDecoder();
@@ -242,14 +242,14 @@ export class LargeFileProcessor {
         message: `Parsing ${allDataPoints.length} data points...`,
       });
 
-      // Parse the data using TraceDataParser
+      // Parse the data using AvailabilityDataParser
       const content = allDataPoints
         .map(data => JSON.stringify(data))
         .join('\n');
       const parsedData =
         type === 'flow'
-          ? TraceDataParser.parseJSONLines(content, 'flow')
-          : TraceDataParser.parseJSONLines(content, 'graph');
+          ? AvailabilityDataParser.parseJSONLines(content, 'flow')
+          : AvailabilityDataParser.parseJSONLines(content, 'graph');
 
       this.options.onProgress({
         loaded: file.size,

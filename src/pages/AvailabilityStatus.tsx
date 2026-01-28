@@ -6,12 +6,12 @@ import React, {
   useCallback,
 } from 'react';
 import { useTranslation } from 'react-i18next';
-import TraceDataManager from '../components/trace/TraceDataManager';
-import TraceFileOpen from '../components/trace/TraceFileOpen';
-import TraceTopology, {
-  type TraceTopologyRef,
-} from '../components/trace/TraceTopology';
-import TraceTimeline from '../components/trace/TraceTimeline';
+import AvailabilityDataManager from '../components/trace/AvailabilityDataManager';
+import AvailabilityFileOpen from '../components/trace/AvailabilityFileOpen';
+import AvailabilityTopology, {
+  type AvailabilityTopologyRef,
+} from '../components/trace/AvailabilityTopology';
+import AvailabilityTimeline from '../components/trace/AvailabilityTimeline';
 import TimeRangeSelector from '../components/TimeRangeSelector';
 import PanelManager from '../components/PanelManager';
 import LargeFileLoadingIndicator from '../components/LargeFileLoadingIndicator';
@@ -23,12 +23,12 @@ interface EdgeProps {
   direction?: 'src2dst' | 'dst2src';
 }
 
-interface TracePlaybackRef {
+interface AvailabilityStatusRef {
   addFlowPanel: () => void;
   closeAllPanels: () => void;
 }
 
-const TracePlayback = forwardRef<TracePlaybackRef, Record<string, never>>(
+const AvailabilityStatus = forwardRef<AvailabilityStatusRef, Record<string, never>>(
   (props, ref) => {
     const { t } = useTranslation();
     const {
@@ -46,7 +46,7 @@ const TracePlayback = forwardRef<TracePlaybackRef, Record<string, never>>(
     const [graphDataFile, setGraphDataFile] = useState<File | null>(null);
     const [isOpenSectionExpanded, setIsOpenSectionExpanded] = useState(false);
 
-    const traceTopologyRef = useRef<TraceTopologyRef>(null);
+    const availabilityTopologyRef = useRef<AvailabilityTopologyRef>(null);
 
     const handleNodeSelect = (nodeId: string | null) => {
       if (nodeId) {
@@ -63,30 +63,30 @@ const TracePlayback = forwardRef<TracePlaybackRef, Record<string, never>>(
     const handleClosePanel = (id: string) => {
       const panelToClose = panels.find(panel => panel.id === id);
       closePanel(id);
-      if (traceTopologyRef.current && panelToClose) {
+      if (availabilityTopologyRef.current && panelToClose) {
         if (
           (panelToClose.type === 'linkFlow' ||
             panelToClose.type === 'traceLinkFlow') &&
           panelToClose.data
         ) {
           const edgeId = `${panelToClose.data.src}-${panelToClose.data.dst}`;
-          traceTopologyRef.current.clearHighlightedEdge(edgeId);
+          availabilityTopologyRef.current.clearHighlightedEdge(edgeId);
         }
         if (
           (panelToClose.type === 'device' ||
             panelToClose.type === 'traceSwitchPort') &&
           panelToClose.data
         ) {
-          traceTopologyRef.current.clearHighlightedNode(panelToClose.data);
+          availabilityTopologyRef.current.clearHighlightedNode(panelToClose.data);
         }
       }
     };
 
     const handleCloseAllPanels = () => {
       closeAllPanels();
-      if (traceTopologyRef.current) {
-        traceTopologyRef.current.clearHighlights();
-        traceTopologyRef.current.clearPortHighlight();
+      if (availabilityTopologyRef.current) {
+        availabilityTopologyRef.current.clearHighlights();
+        availabilityTopologyRef.current.clearPortHighlight();
       }
     };
 
@@ -95,20 +95,20 @@ const TracePlayback = forwardRef<TracePlaybackRef, Record<string, never>>(
     };
 
     const handleHighlightPortLink = (linkId: string) => {
-      if (traceTopologyRef.current) {
-        traceTopologyRef.current.highlightPortLink(linkId);
+      if (availabilityTopologyRef.current) {
+        availabilityTopologyRef.current.highlightPortLink(linkId);
       }
     };
 
     const handleClearPortHighlight = () => {
-      if (traceTopologyRef.current) {
-        traceTopologyRef.current.clearPortHighlight();
+      if (availabilityTopologyRef.current) {
+        availabilityTopologyRef.current.clearPortHighlight();
       }
     };
 
     const handleClearEdgeHighlight = (edgeId: string) => {
-      if (traceTopologyRef.current) {
-        traceTopologyRef.current.clearHighlightedEdge(edgeId);
+      if (availabilityTopologyRef.current) {
+        availabilityTopologyRef.current.clearHighlightedEdge(edgeId);
       }
     };
 
@@ -141,7 +141,7 @@ const TracePlayback = forwardRef<TracePlaybackRef, Record<string, never>>(
       updatePanelDataByType(type, data);
     };
 
-    const updateTraceFlowPanels = useCallback(
+    const updateAvailabilityFlowPanels = useCallback(
       (flowData: any[], currentTime: string) => {
         panels.forEach(panel => {
           if (panel.type === 'traceFlow') {
@@ -180,7 +180,7 @@ const TracePlayback = forwardRef<TracePlaybackRef, Record<string, never>>(
     }));
 
     return (
-      <TraceDataManager>
+      <AvailabilityDataManager>
         {({
           flowData,
           graphData,
@@ -219,9 +219,9 @@ const TracePlayback = forwardRef<TracePlaybackRef, Record<string, never>>(
 
           React.useEffect(() => {
             if (currentFlowData && currentTime) {
-              updateTraceFlowPanels(currentFlowData, currentTime);
+              updateAvailabilityFlowPanels(currentFlowData, currentTime);
             }
-          }, [currentFlowData, currentTime, updateTraceFlowPanels]);
+          }, [currentFlowData, currentTime, updateAvailabilityFlowPanels]);
 
           return (
             <div className="flex h-screen flex-col bg-gray-50">
@@ -329,7 +329,7 @@ const TracePlayback = forwardRef<TracePlaybackRef, Record<string, never>>(
                     <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
                       {/* File Open */}
                       <div className="lg:col-span-1">
-                        <TraceFileOpen
+                        <AvailabilityFileOpen
                           onFlowDataOpen={async file => {
                             await openFlowData(file);
                             handleFlowDataOpen(file);
@@ -366,7 +366,7 @@ const TracePlayback = forwardRef<TracePlaybackRef, Record<string, never>>(
                         {/* Timeline Component */}
                         {hasData && (
                           <div className="mt-4">
-                            <TraceTimeline
+                            <AvailabilityTimeline
                               timeRange={timeRange}
                               currentTime={currentTime}
                               isPlaying={isPlaying}
@@ -429,8 +429,8 @@ const TracePlayback = forwardRef<TracePlaybackRef, Record<string, never>>(
                   <div className="flex-1 flex flex-col p-4">
                     <div className="h-[calc(100vh-200px)] bg-white rounded-lg border border-gray-200 overflow-hidden">
                       {hasGraphData && (
-                        <TraceTopology
-                          ref={traceTopologyRef}
+                        <AvailabilityTopology
+                          ref={availabilityTopologyRef}
                           flowData={currentFlowData}
                           graphData={currentGraphData}
                           currentTime={currentTime}
@@ -500,9 +500,9 @@ const TracePlayback = forwardRef<TracePlaybackRef, Record<string, never>>(
             </div>
           );
         }}
-      </TraceDataManager>
+      </AvailabilityDataManager>
     );
   }
 );
 
-export default TracePlayback;
+export default AvailabilityStatus;

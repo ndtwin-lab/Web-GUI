@@ -21,6 +21,12 @@ interface FlowTablePanelProps {
   initialSearchValue?: string;
 }
 
+const PROTOCOL_MAP: Record<number, string> = {
+  6: 'TCP',
+  17: 'UDP',
+  1: 'ICMP',
+};
+
 const MATCH_LABELS: Record<string, string> = {
   ipv4_dst: 'IP Dst',
   nw_dst: 'IP Dst',
@@ -33,6 +39,9 @@ const MATCH_LABELS: Record<string, string> = {
   in_port: 'In Port',
   eth_type: 'Eth Type',
   dl_type: 'Eth Type',
+  ip_proto: 'Proto',
+  protocol: 'Proto',
+  nw_proto: 'Proto',
 };
 
 function matchKeyLabel(key: string) {
@@ -108,6 +117,14 @@ const EmptyState: React.FC = () => {
 
 const MatchFields: React.FC<{ match: Record<string, unknown> | undefined }> = ({ match }) => {
   const hasMatch = match && Object.keys(match).length > 0;
+  
+  const formatMatchValue = (key: string, value: unknown): string => {
+    if ((key === 'ip_proto' || key === 'protocol' || key === 'nw_proto') && typeof value === 'number') {
+      return PROTOCOL_MAP[value] || String(value);
+    }
+    return String(value);
+  };
+
   return (
     <div className="flex flex-wrap gap-1">
       {hasMatch &&
@@ -116,7 +133,7 @@ const MatchFields: React.FC<{ match: Record<string, unknown> | undefined }> = ({
             key={k}
             className="inline-block rounded border border-blue-200 bg-blue-50 px-2.5 py-0.5 text-xs font-medium text-blue-700"
           >
-            {matchKeyLabel(k)}: {String(v)}
+            {matchKeyLabel(k)}: {formatMatchValue(k, v)}
           </span>
         ))}
       {!hasMatch && (

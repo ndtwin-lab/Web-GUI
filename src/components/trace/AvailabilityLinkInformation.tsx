@@ -4,20 +4,20 @@ import { useTranslation } from 'react-i18next';
 import Draggable from 'react-draggable';
 import { formatBandwidth } from '../../utils/formatters';
 import { getDeviceNameFromIp } from '../../utils/utility';
-import type { TraceFlowData, TraceGraphData } from './TraceDataManager';
+import type { AvailabilityFlowData, AvailabilityGraphData } from './AvailabilityDataManager';
 import LoadingSpinner from '../common/LoadingSpinner';
 
-interface TraceLinkInformationAllProps {
+interface AvailabilityLinkInformationProps {
   data: { src: number; dst: number };
-  flowData: TraceFlowData[];
-  graphData?: TraceGraphData | null;
+  flowData: AvailabilityFlowData[];
+  graphData?: AvailabilityGraphData | null;
   currentTime: string;
   onClose: () => void;
   isLoading?: boolean;
   totalTimePoints?: number;
 }
 
-function TraceLinkInformationAll({
+function AvailabilityLinkInformation({
   data: selectedLink,
   flowData,
   graphData,
@@ -25,10 +25,11 @@ function TraceLinkInformationAll({
   onClose,
   isLoading = false,
   totalTimePoints = 0,
-}: TraceLinkInformationAllProps) {
+}: AvailabilityLinkInformationProps) {
   const { t } = useTranslation();
   const nodeRef = useRef<HTMLDivElement>(null);
   const chartRef = useRef<any>(null);
+  const dataZoomStateRef = useRef<{ start: number; end: number } | null>(null);
   const [isChartReady, setIsChartReady] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -157,20 +158,24 @@ function TraceLinkInformationAll({
     );
   }, [linkData, graphData, selectedLink]);
 
-  // Calculate bandwidth history from all flow data
+  // Calculate bandwidth history from start to current time
   const bandwidthHistoryData = useMemo(() => {
     if (!selectedLink || !flowData || flowData.length === 0) return [];
 
+    const currentTimeMs = new Date(currentTime).getTime();
     const history: { time: string; in: number; out: number }[] = [];
 
-    // Group flow data by timestamp
-    const flowDataByTime = new Map<string, TraceFlowData[]>();
+    // Group flow data by timestamp and filter up to current time
+    const flowDataByTime = new Map<string, AvailabilityFlowData[]>();
     flowData.forEach(flow => {
-      const timeKey = flow.timestamp;
-      if (!flowDataByTime.has(timeKey)) {
-        flowDataByTime.set(timeKey, []);
+      const flowTimeMs = new Date(flow.timestamp).getTime();
+      if (flowTimeMs <= currentTimeMs) {
+        const timeKey = flow.timestamp;
+        if (!flowDataByTime.has(timeKey)) {
+          flowDataByTime.set(timeKey, []);
+        }
+        flowDataByTime.get(timeKey)!.push(flow);
       }
-      flowDataByTime.get(timeKey)!.push(flow);
     });
 
     // Calculate bandwidth for each time point
@@ -225,7 +230,16 @@ function TraceLinkInformationAll({
     return history.sort(
       (a, b) => new Date(a.time).getTime() - new Date(b.time).getTime()
     );
-  }, [selectedLink, flowData]);
+  }, [selectedLink, flowData, currentTime]);
+
+  const handleDataZoom = useCallback((params: any) => {
+    if (params && params.start !== undefined && params.end !== undefined) {
+      dataZoomStateRef.current = {
+        start: params.start,
+        end: params.end,
+      };
+    }
+  }, []);
 
   const initializeChart = useCallback(() => {
     if (!linkData || !chartRef.current || bandwidthHistoryData.length === 0)
@@ -234,6 +248,10 @@ function TraceLinkInformationAll({
     const timeData = bandwidthHistoryData.map(item => item.time);
     const outData = bandwidthHistoryData.map(item => item.out);
     const inData = bandwidthHistoryData.map(item => item.in);
+
+    const savedZoom = dataZoomStateRef.current;
+    const defaultStart = savedZoom ? savedZoom.start : 0;
+    const defaultEnd = savedZoom ? savedZoom.end : 100;
 
     const option = {
       tooltip: {
@@ -282,8 +300,8 @@ function TraceLinkInformationAll({
       dataZoom: [
         {
           type: 'inside',
-          start: 0,
-          end: 100,
+          start: defaultStart,
+          end: defaultEnd,
           zoomOnMouseWheel: true,
           moveOnMouseMove: true,
           moveOnMouseWheel: false,
@@ -292,8 +310,8 @@ function TraceLinkInformationAll({
           show: true,
           type: 'slider',
           top: '85%',
-          start: 0,
-          end: 100,
+          start: defaultStart,
+          end: defaultEnd,
           handleSize: '110%',
           showDetail: true,
           showDataShadow: true,
@@ -401,7 +419,7 @@ function TraceLinkInformationAll({
 
     chartRef.current.getEchartsInstance().setOption(option, true);
     setIsChartReady(true);
-  }, [linkData, bandwidthHistoryData.length, srcDeviceName, dstDeviceName]); // Only depend on the length of bandwidthHistoryData, not the entire array
+  }, [linkData, bandwidthHistoryData.length, srcDeviceName, dstDeviceName]);
 
   useEffect(() => {
     if (linkData && bandwidthHistoryData.length > 0) {
@@ -416,6 +434,33 @@ function TraceLinkInformationAll({
       setError(null);
     }
   }, [bandwidthHistoryData, isLoading]);
+
+  useEffect(() => {
+    if (!chartRef.current || bandwidthHistoryData.length === 0) return;
+
+    const echartsInstance = chartRef.current.getEchartsInstance();
+    const option = echartsInstance.getOption();
+
+    const timeData = bandwidthHistoryData.map(item => item.time);
+    const outData = bandwidthHistoryData.map(item => item.out);
+    const inData = bandwidthHistoryData.map(item => item.in);
+
+    option.xAxis[0].data = timeData;
+    option.series[0].data = inData;
+    option.series[1].data = outData;
+
+    if (dataZoomStateRef.current) {
+      option.dataZoom[0].start = dataZoomStateRef.current.start;
+      option.dataZoom[0].end = dataZoomStateRef.current.end;
+      option.dataZoom[1].start = dataZoomStateRef.current.start;
+      option.dataZoom[1].end = dataZoomStateRef.current.end;
+    }
+
+    echartsInstance.setOption(option, {
+      notMerge: false,
+      lazyUpdate: true,
+    });
+  }, [bandwidthHistoryData]);
 
   // Show loading state
   if (isLoading) {
@@ -481,6 +526,10 @@ function TraceLinkInformationAll({
     : 'N/A';
   const linkStatus = linkData.is_up ? 'Up' : 'Down';
 
+  const latestBandwidth = bandwidthHistoryData[
+    bandwidthHistoryData.length - 1
+  ] || { in: 0, out: 0 };
+
   return (
     // @ts-expect-error - Draggable component type issue
     <Draggable nodeRef={nodeRef} handle=".drag-handle">
@@ -509,27 +558,30 @@ function TraceLinkInformationAll({
           </button>
         </div>
 
-        {!isChartReady && bandwidthHistoryData.length === 0 ? (
-          <div className="flex h-80 items-center justify-center">
-            <div className="text-center">
-              <p className="text-sm text-gray-600">No data available</p>
-            </div>
+        <div className="rounded-lg bg-gray-100 p-4 shadow-inner">
+          <div className="mb-2 flex items-baseline justify-between">
+            <span className="text-lg font-semibold">
+              <span className="text-blue-500">
+                {dstDeviceName} → {srcDeviceName}:{' '}
+                {formatBandwidth(latestBandwidth.in)}
+              </span>
+              <span className="mx-1 text-gray-400"> / </span>
+              <span className="text-red-500">
+                {srcDeviceName} → {dstDeviceName}:{' '}
+                {formatBandwidth(latestBandwidth.out)}
+              </span>
+            </span>
           </div>
-        ) : (
-          <div className="rounded-lg bg-gray-100 p-4 shadow-inner">
-            <div className="mb-2 text-sm text-gray-600">
-              Showing {bandwidthHistoryData.length} time points
-            </div>
-            <div style={{ width: '100%', height: 220 }}>
-              <ReactECharts
-                ref={chartRef}
-                option={{}}
-                style={{ height: '100%', width: '100%' }}
-                opts={{ renderer: 'canvas' }}
-              />
-            </div>
+          <div style={{ width: '100%', height: 220 }}>
+            <ReactECharts
+              ref={chartRef}
+              option={{}}
+              style={{ height: '100%', width: '100%' }}
+              opts={{ renderer: 'canvas' }}
+              onEvents={{ dataZoom: handleDataZoom }}
+            />
           </div>
-        )}
+        </div>
 
         <div className="grid grid-cols-2 gap-x-6 text-sm text-gray-700">
           <div className="flex justify-between border-t pt-2">
@@ -550,4 +602,4 @@ function TraceLinkInformationAll({
   );
 }
 
-export default memo(TraceLinkInformationAll);
+export default memo(AvailabilityLinkInformation);

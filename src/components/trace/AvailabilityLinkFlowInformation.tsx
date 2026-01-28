@@ -10,16 +10,16 @@ import { useTranslation } from 'react-i18next';
 import { getIpString } from '../../utils/formatters';
 import { getDeviceNameFromIp } from '../../utils/utility';
 import { FaChartLine, FaLayerGroup, FaChartArea } from 'react-icons/fa';
-import type { TraceFlowData, TraceGraphData } from './TraceDataManager';
+import type { AvailabilityFlowData, AvailabilityGraphData } from './AvailabilityDataManager';
 
-interface TraceLinkFlowInformationProps {
+interface AvailabilityLinkFlowInformationProps {
   data: {
     src: number | string;
     dst: number | string;
     direction?: 'src2dst' | 'dst2src';
   } | null;
-  flowData: TraceFlowData[];
-  graphData?: TraceGraphData | null;
+  flowData: AvailabilityFlowData[];
+  graphData?: AvailabilityGraphData | null;
   currentTime: string;
   onClose: () => void;
   onAddPanel?: (
@@ -76,7 +76,7 @@ function formatRate(bps: number) {
 
 const COLORS = ['#e53e3e', '#38a169', '#3182ce', '#ecc94b', '#9f7aea'];
 
-const TraceLinkFlowInformation: React.FC<TraceLinkFlowInformationProps> = ({
+const AvailabilityLinkFlowInformation: React.FC<AvailabilityLinkFlowInformationProps> = ({
   data: selectedLink,
   flowData,
   graphData,
@@ -710,4 +710,4 @@ const TraceLinkFlowInformation: React.FC<TraceLinkFlowInformationProps> = ({
   );
 };
 
-export default TraceLinkFlowInformation;
+export default AvailabilityLinkFlowInformation;

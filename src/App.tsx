@@ -4,7 +4,7 @@ import ErrorBoundary from './components/common/ErrorBoundary';
 import Sidebar from './components/Sidebar';
 import Dashboard from './pages/Dashboard';
 import SwitchFlowTable from './pages/SwitchFlowTable';
-import TracePlayback from './pages/TracePlayback';
+import AvailabilityStatus from './pages/AvailabilityStatus';
 import { GraphDataProvider } from './components/GraphDataManager';
 import { FlowDataProvider } from './components/FlowDataManager';
 import { UI_CONSTANTS } from './utils/constants';
@@ -54,7 +54,7 @@ function AppContent() {
                 element={<Dashboard ref={dashboardRef} />}
               />
               <Route path="/SwitchFlowTable" element={<SwitchFlowTable />} />
-              <Route path="/AvailabilityStatus" element={<TracePlayback />} />
+              <Route path="/AvailabilityStatus" element={<AvailabilityStatus />} />
               <Route
                 path="*"
                 element={<Navigate to="/NetworkTopology" replace />}

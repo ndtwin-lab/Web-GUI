@@ -5,10 +5,10 @@ import { getIpString, formatTime } from '../../utils/formatters';
 import FilterPanel from '../FilterPanel';
 import { NETWORK_CONSTANTS } from '../../utils/constants';
 import BandwidthDisplay from '../common/BandwidthDisplay';
-import type { TraceFlowData } from './TraceDataManager';
+import type { AvailabilityFlowData } from './AvailabilityDataManager';
 
-interface TraceFlowInformationProps {
-  flowData: TraceFlowData[];
+interface AvailabilityFlowInformationProps {
+  flowData: AvailabilityFlowData[];
   currentTime: string;
   onClose: () => void;
 }
@@ -113,7 +113,7 @@ const getFilterButtonTitle = (isVisible: boolean): string => {
 };
 
 // Get source port from flow data
-const getSourcePort = (flow: TraceFlowData): string | number => {
+const getSourcePort = (flow: AvailabilityFlowData): string | number => {
   if (flow.src_port !== undefined) {
     return flow.src_port;
   }
@@ -126,7 +126,7 @@ const getSourcePort = (flow: TraceFlowData): string | number => {
 };
 
 // Get destination port from flow data
-const getDestinationPort = (flow: TraceFlowData): string | number => {
+const getDestinationPort = (flow: AvailabilityFlowData): string | number => {
   if (flow.dst_port !== undefined) {
     return flow.dst_port;
   }
@@ -141,7 +141,7 @@ const getDestinationPort = (flow: TraceFlowData): string | number => {
   return 'N/A';
 };
 
-const TraceFlowInformation: React.FC<TraceFlowInformationProps> = ({
+const AvailabilityFlowInformation: React.FC<AvailabilityFlowInformationProps> = ({
   flowData,
   currentTime,
   onClose,
@@ -885,4 +885,4 @@ const TraceFlowInformation: React.FC<TraceFlowInformationProps> = ({
   );
 };
 
-export default TraceFlowInformation;
+export default AvailabilityFlowInformation;

@@ -1,7 +1,7 @@
 import type {
-  TraceDataPoint,
-  ParsedTraceData,
-} from '../components/trace/TraceDataParser';
+  AvailabilityDataPoint,
+  ParsedAvailabilityData,
+} from '../components/trace/AvailabilityDataParser';
 
 export interface TimeAxisOptions {
   enableCaching?: boolean;
@@ -10,8 +10,8 @@ export interface TimeAxisOptions {
 }
 
 export class TimeAxisManager {
-  private flowData: ParsedTraceData | null = null;
-  private graphData: ParsedTraceData | null = null;
+  private flowData: ParsedAvailabilityData | null = null;
+  private graphData: ParsedAvailabilityData | null = null;
   private timeIndex: Map<string, { flowIndex: number; graphIndex: number }> =
     new Map();
   private cache: Map<string, { flowData: any[]; graphData: any }> = new Map();
@@ -29,8 +29,8 @@ export class TimeAxisManager {
    * Initialize the time axis with flow and graph data
    */
   initialize(
-    flowData: ParsedTraceData | null,
-    graphData: ParsedTraceData | null
+    flowData: ParsedAvailabilityData | null,
+    graphData: ParsedAvailabilityData | null
   ): void {
     this.flowData = flowData;
     this.graphData = graphData;

@@ -1,8 +1,8 @@
-# NDT GUI Deployment and Execution Guide
+# NDTwin Web GUI Deployment and Execution Guide
 
 ## Overview
 
-This guide will help you deploy and run the NDTwin GUI application on Ubuntu systems. The application is containerized using Docker and Docker Compose, allowing for quick deployment without polluting your system environment.
+This guide will help you deploy and run the NDTwin Web GUI application on Ubuntu systems. The application is containerized using Docker and Docker Compose, allowing for quick deployment without polluting your system environment.
 
 **Important Notes:**
 
@@ -104,15 +104,15 @@ If both commands display version numbers, the installation is successful.
 If you received a ZIP archive, extract it first:
 
 ```bash
-unzip NDT_GUI_release.zip
-cd NDT_GUI
+unzip NDTwin_Web_GUI_release.zip
+cd NDTwin_Web_GUI
 ```
 
 If you cloned from a Git repository, execute:
 
-   ```bash
+```bash
 git clone <repository-url>
-cd NDT_GUI
+cd NDTwin_Web_GUI
 ```
 
 ### Step 2: Configure Environment Variables
@@ -123,26 +123,26 @@ In the project root directory, you need to create and configure the `.env` file 
 
 1. Copy the environment template:
 
-   ```bash
-   cp .env.example .env
-   ```
+```bash
+cp .env.example .env
+```
 
-2. Edit the `.env` file\*\* and update the NDT server address:
+2. Edit the `.env` file\*\* and update the NDTwin kernel server address:
 
-   ```bash
-   vim .env
-   # Or use other editors like nano, Emacs, etc.
-   ```
+```bash
+vim .env
+# Or use other editors like nano, Emacs, etc.
+```
 
 3. Configure the NDT API Base URL:
-   Find the `NDT_API_BASE_URL` line in the `.env` file and update it to your NDT core server IP address.
-   For example, if your NDT server (mininet or testbed) is running at `http://192.168.10.189:8000`, set it as:
-   `bash
-    NDT_API_BASE_URL=http://192.168.10.189:8000
-    `
-   If your server is at a different address, modify accordingly.
+Find the `NDT_API_BASE_URL` line in the `.env` file and update it to your NDT kernel server IP address.
+For example, if your NDTwin kernel server (mininet or testbed) is running at `http://192.168.10.189:8000`, set it as:
+```bash
+NDT_API_BASE_URL=http://192.168.10.189:8000
+```
+If your server is at a different address, modify accordingly.
 
-**This is a required configuration** - the application will not work correctly without the correct NDT server address.
+**This is a required configuration** - the application will not work correctly without the correct NDTwin kernel server address.
 
 ### Step 3: Execute Deployment Script
 
@@ -178,7 +178,7 @@ Application access addresses:
 
 ### Step 4: Verify Deployment
 
-Open your browser and visit `http://localhost:3000`. You should see the NDTwin GUI application interface.
+Open your browser and visit `http://localhost:3000`. You should see the NDTwin Web GUI application interface.
 
 If you cannot access it, check:
 
@@ -198,7 +198,7 @@ docker-compose logs -f
 
 ### Starting the Application
 
-**Important:** You only need to run `./deploy.sh` **once** during the initial setup. After the first deployment, you can start the application using Docker Compose commands.
+**Important:** You only need to run `./web_gui_deploy.sh` **once** during the initial setup. After the first deployment, you can start the application using Docker Compose commands.
 
 To start the application after the initial deployment:
 
@@ -213,7 +213,7 @@ To start the application after the initial deployment:
 
 2. **Navigate to the project root directory:**
    ```bash
-   cd /path/to/NDT_GUI
+   cd /path/to/NDTwin_Web_GUI
    ```
 
 3. **Start all services:**
@@ -289,9 +289,9 @@ docker-compose logs -f postgres
 
 Press `Ctrl+C` to exit log viewing.
 
-### When to Re-run `./deploy.sh`
+### When to Re-run `./web_gui_deploy.sh`
 
-You only need to run `./deploy.sh` again if:
+You only need to run `./web_gui_deploy.sh` again if:
 
 - You modified the `.env` file (especially `NDT_API_BASE_URL`) and need to rebuild the frontend image
 - You updated the application code and need to rebuild Docker images
@@ -323,15 +323,15 @@ docker-compose up -d
 Backup PostgreSQL data:
 
 ```bash
-# Replace 'user' with your actual DB_USER from .env file (default is 'max' in docker-compose.yml)
-docker exec ndt-postgres pg_dump -U max ndtdb > backup.sql
+# Replace 'user' with your actual DB_USER from .env file (default is 'user' in docker-compose.yml)
+docker exec ndt-postgres pg_dump -U user ndtdb > backup.sql
 ```
 
 Restore data:
 
 ```bash
-# Replace 'user' with your actual DB_USER from .env file (default is 'max' in docker-compose.yml)
-docker exec -i ndt-postgres psql -U max ndtdb < backup.sql
+# Replace 'user' with your actual DB_USER from .env file (default is 'user' in docker-compose.yml)
+docker exec -i ndt-postgres psql -U user ndtdb < backup.sql
 ```
 
-**Note:** The default database user is `max` (as defined in `docker-compose.yml`). If you changed `DB_USER` in your `.env` file, replace `max` with your actual database username in the commands above.
+**Note:** The default database user is `user` (as defined in `docker-compose.yml`). If you changed `DB_USER` in your `.env` file, replace `user` with your actual database username in the commands above.

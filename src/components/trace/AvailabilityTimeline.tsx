@@ -1,7 +1,7 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 
-interface TraceTimelineProps {
+interface AvailabilityTimelineProps {
   timeRange: {
     start: string;
     end: string;
@@ -18,7 +18,7 @@ interface TraceTimelineProps {
   availableTimePoints?: string[];
 }
 
-const TraceTimeline: React.FC<TraceTimelineProps> = ({
+const AvailabilityTimeline: React.FC<AvailabilityTimelineProps> = ({
   timeRange,
   currentTime,
   isPlaying,
@@ -297,4 +297,4 @@ const TraceTimeline: React.FC<TraceTimelineProps> = ({
   );
 };
 
-export default TraceTimeline;
+export default AvailabilityTimeline;

@@ -38,30 +38,38 @@ interface DeleteDialog {
 }
 
 
+// Match field options:
+// - First, user selects protocol.
+// - Then, depending on protocol, show corresponding fields:
+//   TCP: tcp_src, tcp_dst
+//   UDP: udp_src, udp_dst
+//   ICMP: icmpv4_type, icmpv4_code
+// Common fields (always allowed): eth_type, ipv4_src, ipv4_dst, protocol.
 const MATCH_FIELD_OPTIONS = [
-  { value: 'in_port', label: 'Input Port' },
-  { value: 'dl_src', label: 'Src Mac' },
-  { value: 'dl_dst', label: 'Dst Mac' },
-  { value: 'vlan_id', label: 'Vlan ID' },
   { value: 'eth_type', label: 'Ethertype' },
   { value: 'ipv4_src', label: 'Src IP' },
   { value: 'ipv4_dst', label: 'Dst IP' },
   { value: 'protocol', label: 'Protocol' },
-  { value: 'src_port', label: 'Src Port' },
-  { value: 'dst_port', label: 'Dst Port' },
+  { value: 'tcp_src', label: 'TCP Src Port' },
+  { value: 'tcp_dst', label: 'TCP Dst Port' },
+  { value: 'udp_src', label: 'UDP Src Port' },
+  { value: 'udp_dst', label: 'UDP Dst Port' },
+  { value: 'icmpv4_type', label: 'ICMPv4 Type' },
+  { value: 'icmpv4_code', label: 'ICMPv4 Code' },
 ] as const;
 
 const DEFAULT_FORM_DATA: FormData = {
   switchName: '',
   dpid: '',
   priority: '10',
-  matchFields: [{ field: 'in_port', value: '', mask: '' }],
+  // Let user choose protocol first
+  matchFields: [{ field: 'protocol', value: '', mask: '' }],
   instructions: 'Write-Actions',
   actions: [{ type: 'OUTPUT', port: '' }],
 };
 
 const IPV4_DEPENDENT_FIELDS = ['ipv4_src', 'ipv4_dst', 'protocol'];
-const PORT_DEPENDENT_FIELDS = ['src_port', 'dst_port'];
+const PORT_DEPENDENT_FIELDS = ['tcp_src', 'tcp_dst', 'udp_src', 'udp_dst'];
 const DEFAULT_ETH_TYPE = '2048';
 const DEFAULT_PROTOCOL = '6';
 
@@ -69,21 +77,17 @@ const generateEdgeId = (edgeData: EdgeProps): string => {
   return `${edgeData.src}-${edgeData.dst}`;
 };
 
+// Reverse protocol number to name mapping
+const PROTOCOL_NUMBER_TO_NAME: Record<number, string> = {
+  6: 'TCP',
+  17: 'UDP',
+  1: 'ICMP',
+  132: 'SCTP',
+};
+
 const convertMatchToMatchFields = (match: any): Array<{ field: string; value: string; mask: string }> => {
   const matchFields: Array<{ field: string; value: string; mask: string }> = [];
 
-  if (match.in_port) {
-    matchFields.push({ field: 'in_port', value: String(match.in_port), mask: '' });
-  }
-  if (match.dl_src) {
-    matchFields.push({ field: 'dl_src', value: String(match.dl_src), mask: '' });
-  }
-  if (match.dl_dst) {
-    matchFields.push({ field: 'dl_dst', value: String(match.dl_dst), mask: '' });
-  }
-  if (match.vlan_id) {
-    matchFields.push({ field: 'vlan_id', value: String(match.vlan_id), mask: '' });
-  }
   if (match.dl_type || match.eth_type) {
     matchFields.push({ field: 'eth_type', value: String(match.dl_type || match.eth_type), mask: '' });
   }
@@ -97,29 +101,112 @@ const convertMatchToMatchFields = (match: any): Array<{ field: string; value: st
     const parts = value.split('/');
     matchFields.push({ field: 'ipv4_dst', value: parts[0] || '', mask: parts[1] || '' });
   }
-  if (match.protocol) {
-    matchFields.push({ field: 'protocol', value: String(match.protocol), mask: '' });
+
+  // Protocol: convert ip_proto to protocol field
+  const protocolNumber = match.ip_proto !== undefined ? match.ip_proto : match.protocol;
+  if (protocolNumber !== undefined) {
+    const protocolName = PROTOCOL_NUMBER_TO_NAME[protocolNumber] || String(protocolNumber);
+    matchFields.push({ field: 'protocol', value: protocolName, mask: '' });
   }
-  if (match.src_port) {
+
+  // Ports: keep protocol-specific ports (tcp_src, udp_src, etc.)
+  if (match.tcp_src !== undefined) {
+    matchFields.push({ field: 'tcp_src', value: String(match.tcp_src), mask: '' });
+  } else if (match.udp_src !== undefined) {
+    matchFields.push({ field: 'udp_src', value: String(match.udp_src), mask: '' });
+  } else if (match.sctp_src !== undefined) {
+    matchFields.push({ field: 'src_port', value: String(match.sctp_src), mask: '' });
+  } else if (match.src_port !== undefined) {
     matchFields.push({ field: 'src_port', value: String(match.src_port), mask: '' });
   }
-  if (match.dst_port) {
+
+  if (match.tcp_dst !== undefined) {
+    matchFields.push({ field: 'tcp_dst', value: String(match.tcp_dst), mask: '' });
+  } else if (match.udp_dst !== undefined) {
+    matchFields.push({ field: 'udp_dst', value: String(match.udp_dst), mask: '' });
+  } else if (match.sctp_dst !== undefined) {
+    matchFields.push({ field: 'dst_port', value: String(match.sctp_dst), mask: '' });
+  } else if (match.dst_port !== undefined) {
     matchFields.push({ field: 'dst_port', value: String(match.dst_port), mask: '' });
   }
 
-  return matchFields.length > 0 ? matchFields : [{ field: 'in_port', value: '', mask: '' }];
+  // ICMP fields
+  if (match.icmpv4_type !== undefined) {
+    matchFields.push({ field: 'icmpv4_type', value: String(match.icmpv4_type), mask: '' });
+  }
+  if (match.icmpv4_code !== undefined) {
+    matchFields.push({ field: 'icmpv4_code', value: String(match.icmpv4_code), mask: '' });
+  }
+
+  // Default: start from protocol field so the user selects protocol first
+  return matchFields.length > 0 ? matchFields : [{ field: 'protocol', value: '', mask: '' }];
+};
+
+// Protocol number to name mapping
+const PROTOCOL_MAP: Record<string, number> = {
+  'TCP': 6,
+  'UDP': 17,
+  'ICMP': 1,
+  'SCTP': 132,
+};
+
+// Get protocol number from string (e.g., "TCP" -> 6, "6" -> 6)
+const getProtocolNumber = (value: string): number | null => {
+  const upperValue = value.toUpperCase().trim();
+  if (PROTOCOL_MAP[upperValue]) {
+    return PROTOCOL_MAP[upperValue];
+  }
+  const parsed = parseInt(value);
+  return isNaN(parsed) ? null : parsed;
+};
+
+// Get port field name based on protocol (e.g., TCP -> tcp_src/tcp_dst, UDP -> udp_src/udp_dst)
+const getPortFieldName = (protocol: number, portType: 'src' | 'dst'): string => {
+  switch (protocol) {
+    case 6: // TCP
+      return `tcp_${portType}`;
+    case 17: // UDP
+      return `udp_${portType}`;
+    case 1: // ICMP
+      // ICMP doesn't have ports, but we keep this for consistency
+      return `${portType}_port`;
+    default:
+      // For unknown protocols, use generic ipv4_*_port (though Ryu might not support this)
+      return `${portType}_port`;
+  }
 };
 
 const convertMatchFieldsToMatch = (matchFields: FormData['matchFields']): any => {
   const match: any = {};
+  let protocolNumber: number | null = null;
+
+  // First pass: find protocol number
+  matchFields.forEach(field => {
+    if (field.field === 'protocol' && field.value.trim() !== '') {
+      protocolNumber = getProtocolNumber(field.value);
+    }
+  });
+
+  // Second pass: convert fields
   matchFields.forEach(field => {
     if (field.value.trim() === '') return;
 
-    if (field.field === 'in_port') {
-      match[field.field] = parseInt(field.value);
-    } else if (field.field === 'eth_type') {
+    if (field.field === 'eth_type') {
       match[field.field] = field.value.startsWith('0x') ? parseInt(field.value, 16) : parseInt(field.value);
-    } else if (['vlan_id', 'src_port', 'dst_port', 'protocol'].includes(field.field)) {
+    } else if (field.field === 'protocol') {
+      // Convert protocol to ip_proto
+      const protoNum = getProtocolNumber(field.value);
+      if (protoNum !== null) {
+        match['ip_proto'] = protoNum;
+      }
+    } else if (
+      field.field === 'tcp_src' ||
+      field.field === 'tcp_dst' ||
+      field.field === 'udp_src' ||
+      field.field === 'udp_dst' ||
+      field.field === 'icmpv4_type' ||
+      field.field === 'icmpv4_code'
+    ) {
       match[field.field] = parseInt(field.value);
     } else if (['ipv4_src', 'ipv4_dst'].includes(field.field)) {
       match[field.field] = field.mask?.trim() ? `${field.value}/${field.mask}` : field.value;
@@ -149,10 +236,13 @@ interface MatchFieldInputProps {
   mask: string;
   index: number;
   onUpdate: (index: number, field: string, value: string, mask?: string) => void;
+  disabled?: boolean;
 }
 
-const MatchFieldInput: React.FC<MatchFieldInputProps> = ({ field, value, mask, index, onUpdate }) => {
-  const baseInputClass = 'flex-1 rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-transparent focus:ring-2 focus:ring-blue-500';
+const MatchFieldInput: React.FC<MatchFieldInputProps> = ({ field, value, mask, index, onUpdate, disabled = false }) => {
+  const baseInputClass = `flex-1 rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-transparent focus:ring-2 focus:ring-blue-500 ${
+    disabled ? 'cursor-not-allowed bg-gray-100' : ''
+  }`;
 
   if (['ipv4_dst', 'ipv4_src'].includes(field)) {
     return (
@@ -162,6 +252,7 @@ const MatchFieldInput: React.FC<MatchFieldInputProps> = ({ field, value, mask, i
           placeholder="IP"
           value={value}
           onChange={e => onUpdate(index, field, e.target.value, mask)}
+          disabled={disabled}
           className={baseInputClass}
         />
         <span>/</span>
@@ -170,33 +261,12 @@ const MatchFieldInput: React.FC<MatchFieldInputProps> = ({ field, value, mask, i
           placeholder="Mask"
           value={mask}
           onChange={e => onUpdate(index, field, value, e.target.value)}
-          className="w-20 rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-transparent focus:ring-2 focus:ring-blue-500"
+          disabled={disabled}
+          className={`w-20 rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-transparent focus:ring-2 focus:ring-blue-500 ${
+            disabled ? 'cursor-not-allowed bg-gray-100' : ''
+          }`}
         />
       </div>
-    );
-  }
-
-  if (['dl_src', 'dl_dst'].includes(field)) {
-    return (
-      <input
-        type="text"
-        placeholder="MAC Address (XX:XX:XX:XX:XX:XX)"
-        value={value}
-        onChange={e => onUpdate(index, field, e.target.value, mask)}
-        className={baseInputClass}
-      />
-    );
-  }
-
-  if (field === 'vlan_id') {
-    return (
-      <input
-        type="number"
-        placeholder="VLAN ID (1-4094)"
-        value={value}
-        onChange={e => onUpdate(index, field, e.target.value, mask)}
-        className={baseInputClass}
-      />
     );
   }
 
@@ -205,10 +275,11 @@ const MatchFieldInput: React.FC<MatchFieldInputProps> = ({ field, value, mask, i
       <div className="relative flex-1">
         <input
           type="text"
-          placeholder="Protocol (e.g., TCP, UDP, ICMP)"
+          placeholder="Protocol (TCP, UDP, ICMP)"
           value={value}
           onChange={e => onUpdate(index, field, e.target.value, mask)}
           list="protocolOptions"
+          disabled={disabled}
           className={baseInputClass}
         />
         <datalist id="protocolOptions">
@@ -220,6 +291,39 @@ const MatchFieldInput: React.FC<MatchFieldInputProps> = ({ field, value, mask, i
     );
   }
 
+  if (
+    field === 'tcp_src' ||
+    field === 'tcp_dst' ||
+    field === 'udp_src' ||
+    field === 'udp_dst'
+  ) {
+    const isSrc = field.endsWith('src');
+    const protoLabel = field.startsWith('tcp') ? 'TCP' : 'UDP';
+      return (
+        <input
+          type="number"
+          placeholder={`${protoLabel} ${isSrc ? 'Src' : 'Dst'} Port`}
+          value={value}
+          onChange={e => onUpdate(index, field, e.target.value, mask)}
+          disabled={disabled}
+          className={baseInputClass}
+        />
+      );
+    }
+
+    if (field === 'icmpv4_type' || field === 'icmpv4_code') {
+      return (
+        <input
+          type="number"
+          placeholder={field === 'icmpv4_type' ? 'ICMPv4 Type (e.g., 8)' : 'ICMPv4 Code (e.g., 0)'}
+          value={value}
+          onChange={e => onUpdate(index, field, e.target.value, mask)}
+          disabled={disabled}
+          className={baseInputClass}
+        />
+      );
+    }
+
   if (field === 'eth_type') {
     return (
       <div className="relative flex-1">
@@ -229,6 +333,7 @@ const MatchFieldInput: React.FC<MatchFieldInputProps> = ({ field, value, mask, i
           value={value}
           onChange={e => onUpdate(index, field, e.target.value, mask)}
           list="ethertypeOptions"
+          disabled={disabled}
           className={baseInputClass}
         />
         <datalist id="ethertypeOptions">
@@ -247,6 +352,7 @@ const MatchFieldInput: React.FC<MatchFieldInputProps> = ({ field, value, mask, i
       placeholder={placeholder}
       value={value}
       onChange={e => onUpdate(index, field, e.target.value, mask)}
+      disabled={disabled}
       className={baseInputClass}
     />
   );
@@ -314,9 +420,12 @@ const FlowEntryForm: React.FC<FlowEntryFormProps> = ({
                 value={formData.switchName}
                 onChange={e => onSwitchNameChange(e.target.value)}
                 list="switchNameOptions"
+                disabled={operationType === 'modify'}
                 className={`w-full border px-3 py-2 ${
                   switchNameError ? 'border-red-500' : 'border-gray-300'
-                } rounded-lg focus:border-transparent focus:ring-2 focus:ring-blue-500`}
+                } rounded-lg focus:border-transparent focus:ring-2 focus:ring-blue-500 ${
+                  operationType === 'modify' ? 'cursor-not-allowed bg-gray-100' : ''
+                }`}
                 placeholder="Enter Switch Name"
               />
               <datalist id="switchNameOptions">
@@ -346,7 +455,10 @@ const FlowEntryForm: React.FC<FlowEntryFormProps> = ({
               type="number"
               value={formData.priority}
               onChange={e => onFormDataChange({ priority: e.target.value })}
-              className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-transparent focus:ring-2 focus:ring-blue-500"
+              disabled={operationType === 'modify'}
+              className={`w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-transparent focus:ring-2 focus:ring-blue-500 ${
+                operationType === 'modify' ? 'cursor-not-allowed bg-gray-100' : ''
+              }`}
               placeholder="10"
             />
           </div>
@@ -355,14 +467,16 @@ const FlowEntryForm: React.FC<FlowEntryFormProps> = ({
           <div>
             <div className="mb-2 flex items-center justify-between">
               <label className="block text-sm font-medium text-gray-700">Match Fields</label>
-              <button
-                type="button"
-                onClick={onMatchFieldAdd}
-                disabled={onAvailableMatchFields().length === 0}
-                className="text-sm text-blue-500 hover:text-blue-700 disabled:cursor-not-allowed disabled:text-gray-400"
-              >
-                + Add Match Field
-              </button>
+              {operationType === 'install' && (
+                <button
+                  type="button"
+                  onClick={onMatchFieldAdd}
+                  disabled={onAvailableMatchFields().length === 0}
+                  className="text-sm text-blue-500 hover:text-blue-700 disabled:cursor-not-allowed disabled:text-gray-400"
+                >
+                  + Add Match Field
+                </button>
+              )}
             </div>
             <div className="max-h-32 space-y-3 overflow-y-auto rounded-lg border border-gray-200 p-3">
               {formData.matchFields.map((matchField, index) => (
@@ -370,7 +484,10 @@ const FlowEntryForm: React.FC<FlowEntryFormProps> = ({
                   <select
                     value={matchField.field}
                     onChange={e => onMatchFieldUpdate(index, e.target.value, matchField.value, matchField.mask)}
-                    className="flex-1 rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-transparent focus:ring-2 focus:ring-blue-500"
+                    disabled={operationType === 'modify'}
+                    className={`flex-1 rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-transparent focus:ring-2 focus:ring-blue-500 ${
+                      operationType === 'modify' ? 'cursor-not-allowed bg-gray-100' : ''
+                    }`}
                   >
                     {MATCH_FIELD_OPTIONS.map(option => {
                       const isSelected = formData.matchFields.some(
@@ -391,15 +508,18 @@ const FlowEntryForm: React.FC<FlowEntryFormProps> = ({
                     mask={matchField.mask}
                     index={index}
                     onUpdate={onMatchFieldUpdate}
+                    disabled={operationType === 'modify'}
                   />
 
-                  <button
-                    type="button"
-                    onClick={() => onMatchFieldRemove(index)}
-                    className="px-3 py-2 text-red-500 hover:text-red-700"
-                  >
-                    Remove
-                  </button>
+                  {operationType === 'install' && (
+                    <button
+                      type="button"
+                      onClick={() => onMatchFieldRemove(index)}
+                      className="px-3 py-2 text-red-500 hover:text-red-700"
+                    >
+                      Remove
+                    </button>
+                  )}
                 </div>
               ))}
             </div>
@@ -554,6 +674,8 @@ const SwitchFlowTable: React.FC = () => {
   const [switchNameError, setSwitchNameError] = useState<string | null>(null);
   const [portError, setPortError] = useState<string | null>(null);
   const [deleteDialog, setDeleteDialog] = useState<DeleteDialog>({ open: false, flow: null });
+  // Store original flow entry for modify operation
+  const [originalFlowEntry, setOriginalFlowEntry] = useState<SelectedFlow | null>(null);
 
   // Refs & Hooks
   const topologyRef = useRef<TopologyRef>(null);
@@ -772,49 +894,118 @@ const SwitchFlowTable: React.FC = () => {
       return;
     }
 
-    const match = convertMatchFieldsToMatch(formData.matchFields);
     const actions = convertActionsToApiFormat(formData.actions);
-    const flowEntry: { dpid: number; priority?: number; match: object; actions: any[] } = {
-      dpid: parseInt(formData.dpid),
-      match,
-      actions,
-    };
+    
+    let flowEntry: { dpid: number; priority?: number; match: object; actions: any[] };
 
-    const priorityValue = parseInt(formData.priority);
-    if (!isNaN(priorityValue) && priorityValue > 0) {
-      flowEntry.priority = priorityValue;
+    if (operationType === 'install') {
+      const match = convertMatchFieldsToMatch(formData.matchFields);
+      flowEntry = {
+        dpid: parseInt(formData.dpid),
+        match,
+        actions,
+      };
+
+      const priorityValue = parseInt(formData.priority);
+      if (!isNaN(priorityValue) && priorityValue > 0) {
+        flowEntry.priority = priorityValue;
+      }
+    } else {
+      // For modify, use original match and priority to match the existing entry
+      if (!originalFlowEntry) {
+        alert('Error: Original flow entry not found');
+        return;
+      }
+
+      // Convert original match to the format needed for API
+      const originalMatch = originalFlowEntry.flow.match;
+      const standardMatch: any = {};
+
+      // Include all match fields from original entry
+      // Use only ipv4_* and ip_proto (not nw_*), and only eth_type (not dl_type)
+      if (originalMatch.in_port !== undefined) standardMatch.in_port = originalMatch.in_port;
+      if (originalMatch.dl_src !== undefined) standardMatch.dl_src = originalMatch.dl_src;
+      if (originalMatch.dl_dst !== undefined) standardMatch.dl_dst = originalMatch.dl_dst;
+      if (originalMatch.vlan_id !== undefined) standardMatch.vlan_id = originalMatch.vlan_id;
+      // Use eth_type, fallback to dl_type if eth_type doesn't exist
+      if (originalMatch.eth_type !== undefined) {
+        standardMatch.eth_type = originalMatch.eth_type;
+      } else if (originalMatch.dl_type !== undefined) {
+        standardMatch.eth_type = originalMatch.dl_type;
+      }
+      // Use ipv4_src, fallback to nw_src if ipv4_src doesn't exist (convert nw_* to ipv4_*)
+      if (originalMatch.ipv4_src !== undefined) {
+        standardMatch.ipv4_src = originalMatch.ipv4_src;
+      } else if (originalMatch.nw_src !== undefined) {
+        standardMatch.ipv4_src = originalMatch.nw_src;
+      }
+      // Use ipv4_dst, fallback to nw_dst if ipv4_dst doesn't exist (convert nw_* to ipv4_*)
+      if (originalMatch.ipv4_dst !== undefined) {
+        standardMatch.ipv4_dst = originalMatch.ipv4_dst;
+      } else if (originalMatch.nw_dst !== undefined) {
+        standardMatch.ipv4_dst = originalMatch.nw_dst;
+      }
+      // Use ip_proto, fallback to nw_proto if ip_proto doesn't exist (convert nw_proto to ip_proto)
+      if (originalMatch.ip_proto !== undefined) {
+        standardMatch.ip_proto = originalMatch.ip_proto;
+      } else if (originalMatch.nw_proto !== undefined) {
+        standardMatch.ip_proto = originalMatch.nw_proto;
+      }
+      if (originalMatch.tcp_src !== undefined) standardMatch.tcp_src = originalMatch.tcp_src;
+      if (originalMatch.tcp_dst !== undefined) standardMatch.tcp_dst = originalMatch.tcp_dst;
+      if (originalMatch.udp_src !== undefined) standardMatch.udp_src = originalMatch.udp_src;
+      if (originalMatch.udp_dst !== undefined) standardMatch.udp_dst = originalMatch.udp_dst;
+      if (originalMatch.src_port !== undefined) standardMatch.src_port = originalMatch.src_port;
+      if (originalMatch.dst_port !== undefined) standardMatch.dst_port = originalMatch.dst_port;
+      if (originalMatch.icmpv4_type !== undefined) standardMatch.icmpv4_type = originalMatch.icmpv4_type;
+      if (originalMatch.icmpv4_code !== undefined) standardMatch.icmpv4_code = originalMatch.icmpv4_code;
+
+      flowEntry = {
+        dpid: originalFlowEntry.dpid,
+        match: standardMatch,
+        actions,
+        priority: originalFlowEntry.flow.priority !== undefined && originalFlowEntry.flow.priority !== null 
+          ? originalFlowEntry.flow.priority 
+          : 0,
+      };
     }
 
     try {
       setLoading(true);
       if (operationType === 'install') {
-        await apiService.installModifyDeleteFlowEntries({
+        const payload = {
           install_flow_entries: [flowEntry],
           modify_flow_entries: [],
           delete_flow_entries: [],
-        });
+        };
+        console.log('Install flow entry payload:', JSON.stringify(payload, null, 2));
+        await apiService.installModifyDeleteFlowEntries(payload);
         alert('Flow added successfully!');
       } else if (operationType === 'modify') {
-        await apiService.installModifyDeleteFlowEntries({
+        const payload = {
           install_flow_entries: [],
           modify_flow_entries: [flowEntry],
           delete_flow_entries: [],
-        });
+        };
+        console.log('Modify flow entry payload:', JSON.stringify(payload, null, 2));
+        await apiService.installModifyDeleteFlowEntries(payload);
         alert('Flow modified successfully!');
       }
       setShowForm(false);
+      setOriginalFlowEntry(null); // Clear original flow entry after successful operation
     } catch (error: any) {
       alert(`Error ${operationType === 'install' ? 'adding' : 'modifying'} flow: ${error.message}`);
     } finally {
       setLoading(false);
     }
-  }, [formData, operationType]);
+  }, [formData, operationType, originalFlowEntry]);
 
   const handleAddFlow = useCallback(() => {
     setShowForm(true);
     setOperationType('install');
     setFormData(DEFAULT_FORM_DATA);
     setSwitchNameError(null);
+    setOriginalFlowEntry(null); // Clear original flow entry for install
   }, []);
 
   const handleEditFlow = useCallback(
@@ -824,6 +1015,9 @@ const SwitchFlowTable: React.FC = () => {
         const switchNode = latestGraphData.nodes.find(node => node.dpid === flow.dpid);
         if (switchNode) switchName = switchNode.device_name;
       }
+
+      // Store original flow entry for modify operation
+      setOriginalFlowEntry(flow);
 
       setFormData({
         switchName,
@@ -859,27 +1053,69 @@ const SwitchFlowTable: React.FC = () => {
       const originalMatch = deleteDialog.flow.flow.match;
       const originalPriority = deleteDialog.flow.flow.priority;
       
-      console.log('Original flow data:', {
-        dpid: deleteDialog.flow.dpid,
-        priority: originalPriority,
-        match: originalMatch,
-      });
+      // console.log('Original flow data:', { 
+      //   dpid: deleteDialog.flow.dpid,
+      //   priority: originalPriority,
+      //   match: originalMatch,
+      // });
 
       const standardMatch: any = {};
 
-      if (originalMatch.in_port) standardMatch.in_port = originalMatch.in_port;
-      if (originalMatch.dl_src) standardMatch.dl_src = originalMatch.dl_src;
-      if (originalMatch.dl_dst) standardMatch.dl_dst = originalMatch.dl_dst;
-      if (originalMatch.vlan_id) standardMatch.vlan_id = originalMatch.vlan_id;
-      if (originalMatch.eth_type || originalMatch.dl_type)
-        standardMatch.eth_type = originalMatch.eth_type || originalMatch.dl_type;
-      if (originalMatch.ipv4_src || originalMatch.nw_src)
-        standardMatch.ipv4_src = originalMatch.ipv4_src || originalMatch.nw_src;
-      if (originalMatch.ipv4_dst || originalMatch.nw_dst)
-        standardMatch.ipv4_dst = originalMatch.ipv4_dst || originalMatch.nw_dst;
-      if (originalMatch.protocol) standardMatch.protocol = originalMatch.protocol;
-      if (originalMatch.src_port) standardMatch.src_port = originalMatch.src_port;
-      if (originalMatch.dst_port) standardMatch.dst_port = originalMatch.dst_port;
+      // Include ALL match fields from original entry to ensure exact match for deletion
+      // Standard fields
+      // Use only ipv4_* and ip_proto (not nw_*), and only eth_type (not dl_type)
+      if (originalMatch.in_port !== undefined) standardMatch.in_port = originalMatch.in_port;
+      if (originalMatch.dl_src !== undefined) standardMatch.dl_src = originalMatch.dl_src;
+      if (originalMatch.dl_dst !== undefined) standardMatch.dl_dst = originalMatch.dl_dst;
+      if (originalMatch.vlan_id !== undefined) standardMatch.vlan_id = originalMatch.vlan_id;
+      // Use eth_type, fallback to dl_type if eth_type doesn't exist
+      if (originalMatch.eth_type !== undefined) {
+        standardMatch.eth_type = originalMatch.eth_type;
+      } else if (originalMatch.dl_type !== undefined) {
+        standardMatch.eth_type = originalMatch.dl_type;
+      }
+      // Use ipv4_src, fallback to nw_src if ipv4_src doesn't exist (convert nw_* to ipv4_*)
+      if (originalMatch.ipv4_src !== undefined) {
+        standardMatch.ipv4_src = originalMatch.ipv4_src;
+      } else if (originalMatch.nw_src !== undefined) {
+        standardMatch.ipv4_src = originalMatch.nw_src;
+      }
+      // Use ipv4_dst, fallback to nw_dst if ipv4_dst doesn't exist (convert nw_* to ipv4_*)
+      if (originalMatch.ipv4_dst !== undefined) {
+        standardMatch.ipv4_dst = originalMatch.ipv4_dst;
+      } else if (originalMatch.nw_dst !== undefined) {
+        standardMatch.ipv4_dst = originalMatch.nw_dst;
+      }
+
+      // Protocol: must include ip_proto if it exists (convert nw_proto to ip_proto)
+      if (originalMatch.ip_proto !== undefined) {
+        standardMatch.ip_proto = originalMatch.ip_proto;
+      } else if (originalMatch.protocol !== undefined) {
+        standardMatch.ip_proto = originalMatch.protocol;
+      } else if (originalMatch.nw_proto !== undefined) {
+        standardMatch.ip_proto = originalMatch.nw_proto;
+      }
+
+      // Ports: preserve all protocol-specific port fields
+      if (originalMatch.tcp_src !== undefined) standardMatch.tcp_src = originalMatch.tcp_src;
+      if (originalMatch.tcp_dst !== undefined) standardMatch.tcp_dst = originalMatch.tcp_dst;
+      if (originalMatch.udp_src !== undefined) standardMatch.udp_src = originalMatch.udp_src;
+      if (originalMatch.udp_dst !== undefined) standardMatch.udp_dst = originalMatch.udp_dst;
+      // Fallback for generic port fields
+      if (originalMatch.src_port !== undefined) standardMatch.src_port = originalMatch.src_port;
+      if (originalMatch.dst_port !== undefined) standardMatch.dst_port = originalMatch.dst_port;
+
+      // ICMP fields
+      if (originalMatch.icmpv4_type !== undefined) standardMatch.icmpv4_type = originalMatch.icmpv4_type;
+      if (originalMatch.icmpv4_code !== undefined) standardMatch.icmpv4_code = originalMatch.icmpv4_code;
+
+      // Include any other fields that might exist in the original match
+      const excludedFields = new Set(['nw_src', 'nw_dst', 'nw_proto', 'dl_type']);
+      Object.keys(originalMatch).forEach(key => {
+        if (!standardMatch.hasOwnProperty(key) && originalMatch[key] !== undefined && !excludedFields.has(key)) {
+          standardMatch[key] = originalMatch[key];
+        }
+      });
 
       if (Object.keys(standardMatch).length === 0) {
         standardMatch.eth_type = 2048;
@@ -892,11 +1128,11 @@ const SwitchFlowTable: React.FC = () => {
         match: standardMatch,
       };
 
-      // console.log('Delete request payload:', JSON.stringify({
-      //   install_flow_entries: [],
-      //   modify_flow_entries: [],
-      //   delete_flow_entries: [deleteEntry],
-      // }, null, 2));
+      console.log('Delete request payload:', JSON.stringify({
+        install_flow_entries: [],
+        modify_flow_entries: [],
+        delete_flow_entries: [deleteEntry],
+      }, null, 2));
 
       await apiService.installModifyDeleteFlowEntries({
         install_flow_entries: [],
@@ -917,7 +1153,26 @@ const SwitchFlowTable: React.FC = () => {
   // Match Field Helpers
   const getAvailableMatchFields = useCallback(() => {
     const selectedFields = formData.matchFields.map(field => field.field);
-    return MATCH_FIELD_OPTIONS.filter(option => !selectedFields.includes(option.value));
+    // Determine currently selected protocol (if any)
+    const protocolField = formData.matchFields.find(mf => mf.field === 'protocol');
+    const proto = protocolField?.value?.toUpperCase().trim();
+
+    const baseAllowed = ['eth_type', 'ipv4_src', 'ipv4_dst', 'protocol'];
+    let extraAllowed: string[] = [];
+
+    if (proto === 'TCP') {
+      extraAllowed = ['tcp_src', 'tcp_dst'];
+    } else if (proto === 'UDP') {
+      extraAllowed = ['udp_src', 'udp_dst'];
+    } else if (proto === 'ICMP') {
+      extraAllowed = ['icmpv4_type', 'icmpv4_code'];
+    }
+
+    const allowed = new Set([...baseAllowed, ...extraAllowed]);
+
+    return MATCH_FIELD_OPTIONS.filter(
+      option => allowed.has(option.value) && !selectedFields.includes(option.value)
+    );
   }, [formData.matchFields]);
 
   const addDependentFields = useCallback(

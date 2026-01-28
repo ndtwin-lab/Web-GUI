@@ -138,7 +138,6 @@ export const flowEntry = {
     }>;
     delete_flow_entries?: Array<{
       dpid: number;
-      priority?: number;
       match: object;
     }>;
   }) =>

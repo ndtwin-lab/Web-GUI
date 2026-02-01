@@ -8,8 +8,8 @@ if ! command -v docker &> /dev/null; then
     exit 1
 fi
 
-if ! command -v docker-compose &> /dev/null; then
-    echo "Docker Compose is not installed, please install Docker Compose first"
+if ! docker compose version &> /dev/null; then
+    echo "Docker Compose (Plugin) is not installed."
     exit 1
 fi
 
@@ -26,20 +26,20 @@ fi
 
 # Stop existing containers
 echo "Stopping existing containers..."
-docker-compose down
+docker compose down
 
 # Remove old containers and volumes if needed
 echo "Cleaning up old containers and volumes..."
-docker-compose down -v --remove-orphans
+docker compose down -v --remove-orphans
 
 # Build and start containers
 echo " Building and starting containers..."
-docker-compose up --build -d
+docker compose up --build -d
 
 # Check if containers started successfully
 if [ $? -ne 0 ]; then
     echo "Failed to start containers. Check the logs:"
-    docker-compose logs
+    docker compose logs
     exit 1
 fi
 
@@ -49,12 +49,12 @@ sleep 15
 
 # Check service status
 echo "Checking service status..."
-docker-compose ps
+docker compose ps
 
 # Check if all services are running
-if docker-compose ps | grep -q "Exit"; then
+if docker compose ps | grep -q "Exit"; then
     echo "Some services failed to start. Check the logs:"
-    docker-compose logs
+    docker compose logs
     exit 1
 fi
 
@@ -66,11 +66,11 @@ echo "   Frontend: http://localhost:3000"
 echo "   Database: localhost:5433"
 echo ""
 echo "Common commands:"
-echo "   View logs: docker-compose logs -f"
-echo "   Stop services: docker-compose down"
-echo "   Restart services: docker-compose restart"
+echo "   View logs: docker compose logs -f"
+echo "   Stop services: docker compose down"
+echo "   Restart services: docker compose restart"
 echo "   Update deployment: ./deploy.sh"
-echo "   View specific service logs: docker-compose logs -f [service_name]"
+echo "   View specific service logs: docker compose logs -f [service_name]"
 echo ""
 echo "Note: If you can't access the application, check:"
 echo "   - Firewall settings"

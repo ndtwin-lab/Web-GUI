@@ -185,13 +185,13 @@ If you cannot access it, check:
 1. Whether containers are running:
 
 ```bash
-docker-compose ps
+docker compose ps
 ```
 
 2. View service logs:
 
 ```bash
-docker-compose logs -f
+docker compose logs -f
 ```
 
 ## Daily Usage
@@ -218,13 +218,13 @@ To start the application after the initial deployment:
 
 3. **Start all services:**
    ```bash
-   docker-compose up -d
+   docker compose up -d
    ```
    The `-d` flag runs containers in detached mode (in the background).
 
 4. **Verify services are running:**
    ```bash
-   docker-compose ps
+   docker compose ps
    ```
    You should see all three services (postgres, node-positions-api, frontend) with status "Up".
 
@@ -236,7 +236,7 @@ To start the application after the initial deployment:
 To stop all services:
 
 ```bash
-docker-compose down
+docker compose down
 ```
 
 This will stop all containers but preserve the data volumes (database data will be retained).
@@ -244,7 +244,7 @@ This will stop all containers but preserve the data volumes (database data will 
 To stop and remove all data volumes (this will delete database data):
 
 ```bash
-docker-compose down -v
+docker compose down -v
 ```
 
 **Warning:** Using `-v` will permanently delete all database data. Only use this if you want to start fresh.
@@ -254,13 +254,13 @@ docker-compose down -v
 To restart all services:
 
 ```bash
-docker-compose restart
+docker compose restart
 ```
 
 To restart a specific service (e.g., frontend):
 
 ```bash
-docker-compose restart frontend
+docker compose restart frontend
 ```
 
 ### Viewing Service Status
@@ -268,7 +268,7 @@ docker-compose restart frontend
 Check the status of all containers:
 
 ```bash
-docker-compose ps
+docker compose ps
 ```
 
 ### Viewing Logs
@@ -276,15 +276,15 @@ docker-compose ps
 View logs from all services:
 
 ```bash
-docker-compose logs -f
+docker compose logs -f
 ```
 
 View logs from a specific service:
 
 ```bash
-docker-compose logs -f frontend
-docker-compose logs -f node-positions-api
-docker-compose logs -f postgres
+docker compose logs -f frontend
+docker compose logs -f node-positions-api
+docker compose logs -f postgres
 ```
 
 Press `Ctrl+C` to exit log viewing.
@@ -297,7 +297,7 @@ You only need to run `./web_gui_deploy.sh` again if:
 - You updated the application code and need to rebuild Docker images
 - You want to completely reset the deployment (removes containers and volumes)
 
-For normal daily usage, simply use `docker-compose up -d` to start the services.
+For normal daily usage, simply use `docker compose up -d` to start the services.
 
 ## Advanced Configuration
 
@@ -314,8 +314,8 @@ ports:
 After modification, restart the services:
 
 ```bash
-docker-compose down
-docker-compose up -d
+docker compose down
+docker compose up -d
 ```
 
 ### Database Backup

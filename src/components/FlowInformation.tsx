@@ -3,6 +3,7 @@ import Draggable from 'react-draggable';
 import { useTranslation } from 'react-i18next';
 import { apiService } from '../api/apiService';
 import { usePolling } from '../hooks/usePolling';
+import { useLocalStorage } from '../hooks/useLocalStorage';
 import { getIpString } from '../utils/formatters';
 import FilterPanel from './FilterPanel';
 import type { FlowDataType } from '../types';
@@ -125,11 +126,45 @@ const FlowInformation: React.FC<FlowInformationProps> = ({ onClose }) => {
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
   const [showFilterPanel, setShowFilterPanel] = useState(false);
   const [showPortTable, setShowPortTable] = useState(false);
+  
+  // Top-K and Interval settings with localStorage persistence
+  const [displayMode, setDisplayMode] = useLocalStorage<'top-k' | 'show-all'>(
+    'flowInfo_displayMode',
+    'top-k'
+  );
+  const [kValue, setKValue] = useLocalStorage<number>('flowInfo_kValue', 50);
+  const [intervalValue, setIntervalValue] = useLocalStorage<number>(
+    'flowInfo_intervalValue',
+    1000
+  );
+  const [showTopKModal, setShowTopKModal] = useState(false);
+  const [showIntervalModal, setShowIntervalModal] = useState(false);
+  const [tempKValue, setTempKValue] = useState<number>(kValue);
+  const [tempIntervalValue, setTempIntervalValue] = useState<number>(intervalValue);
+
+  // Sync temp values when modal opens or kValue/intervalValue changes
+  useEffect(() => {
+    setTempKValue(kValue);
+  }, [kValue]);
+
+  useEffect(() => {
+    setTempIntervalValue(intervalValue);
+  }, [intervalValue]);
+
+  // Create fetcher based on display mode
+  const fetcher = React.useCallback(async () => {
+    if (displayMode === 'top-k') {
+      return await apiService.getTopKFlowTableData(kValue);
+    } else {
+      return await apiService.getFlowTableData();
+    }
+  }, [displayMode, kValue]);
+
   const polling = usePolling<FlowDataType[]>({
-    fetcher: apiService.getFlowTableData,
-    interval: 1000,
+    fetcher,
+    interval: intervalValue,
     autoStart: true,
-    dependencies: [],
+    dependencies: [fetcher, intervalValue],
   });
 
   useEffect(() => {
@@ -542,8 +577,215 @@ const FlowInformation: React.FC<FlowInformationProps> = ({ onClose }) => {
     });
   };
 
+  const handleTopKApply = () => {
+    if (tempKValue > 0) {
+      setKValue(tempKValue);
+      setDisplayMode('top-k');
+      setShowTopKModal(false);
+    }
+  };
+
+  const handleTopKCancel = () => {
+    // Reset temp value to current saved value
+    setTempKValue(kValue);
+    setShowTopKModal(false);
+  };
+
+  const handleShowAll = () => {
+    setDisplayMode('show-all');
+    setShowTopKModal(false);
+  };
+
+  const handleIntervalApply = () => {
+    if (tempIntervalValue >= 100) {
+      setIntervalValue(tempIntervalValue);
+      setShowIntervalModal(false);
+    }
+  };
+
+  const handleIntervalCancel = () => {
+    // Reset temp value to current saved value
+    setTempIntervalValue(intervalValue);
+    setShowIntervalModal(false);
+  };
+
   return (
     <>
+      {/* Top-K Flow Modal */}
+      {showTopKModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+          <div className="w-11/12 max-w-md overflow-hidden rounded-lg border-4 border-[#e0e0e0] bg-gradient-to-b from-[#f8fafc] to-[#e3e9f3] shadow-lg">
+            <div className="border-b border-[#e0e0e0] bg-gradient-to-b from-[#f8fafc] to-[#e3e9f3] px-6 py-4">
+              <div className="flex items-center justify-between">
+                <h3
+                  className="text-xl font-bold tracking-tight"
+                  style={{ color: '#1976d2' }}
+                >
+                  Display only top-k flow information
+                </h3>
+                <button
+                  onClick={handleTopKCancel}
+                  className="rounded-md border border-[#e0e0e0] bg-[#fff] p-2 transition-all duration-200 hover:bg-[#e3e9f3]"
+                  title="Close"
+                >
+                  <svg
+                    className="h-5 w-5"
+                    style={{ color: '#1976d2' }}
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M6 18L18 6M6 6l12 12"
+                    />
+                  </svg>
+                </button>
+              </div>
+            </div>
+            <div className="bg-[#fff] px-6 py-4">
+              <div className="mb-4">
+                <p className="mb-2 text-sm text-[#666]">
+                  Current mode:{' '}
+                  <span
+                    className={`font-semibold ${
+                      displayMode === 'top-k'
+                        ? 'text-[#1976d2]'
+                        : 'text-[#ff5722]'
+                    }`}
+                  >
+                    {displayMode === 'top-k'
+                      ? `Top-K (K=${kValue})`
+                      : 'Show All'}
+                  </span>
+                </p>
+                <label
+                  htmlFor="k-value"
+                  className="mb-2 block text-sm font-medium text-[#1976d2]"
+                >
+                  K value:
+                </label>
+                <input
+                  id="k-value"
+                  type="number"
+                  min="1"
+                  value={tempKValue}
+                  onChange={e => setTempKValue(parseInt(e.target.value) || 1)}
+                  className="w-full rounded-md border border-[#e0e0e0] px-3 py-2 text-[#222] focus:border-[#1976d2] focus:outline-none focus:ring-2 focus:ring-[#1976d2]"
+                />
+              </div>
+              <div className="flex items-center justify-end space-x-2">
+                <button
+                  onClick={handleTopKCancel}
+                  className="rounded-md border border-[#e0e0e0] bg-[#fff] px-4 py-2 text-sm font-medium text-[#1976d2] transition-all duration-200 hover:bg-[#e3e9f3]"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleShowAll}
+                  className="rounded-md border border-[#e0e0e0] bg-[#fff] px-4 py-2 text-sm font-medium text-[#1976d2] transition-all duration-200 hover:bg-[#e3e9f3]"
+                >
+                  Show All
+                </button>
+                <button
+                  onClick={handleTopKApply}
+                  className="rounded-md bg-[#1976d2] px-4 py-2 text-sm font-medium text-white transition-all duration-200 hover:bg-[#1565c0]"
+                >
+                  Apply
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Update Interval Modal */}
+      {showIntervalModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+          <div className="w-11/12 max-w-md overflow-hidden rounded-lg border-4 border-[#e0e0e0] bg-gradient-to-b from-[#f8fafc] to-[#e3e9f3] shadow-lg">
+            <div className="border-b border-[#e0e0e0] bg-gradient-to-b from-[#f8fafc] to-[#e3e9f3] px-6 py-4">
+              <div className="flex items-center justify-between">
+                <h3
+                  className="text-xl font-bold tracking-tight"
+                  style={{ color: '#1976d2' }}
+                >
+                  Interval between updating flow information
+                </h3>
+                <button
+                  onClick={handleIntervalCancel}
+                  className="rounded-md border border-[#e0e0e0] bg-[#fff] p-2 transition-all duration-200 hover:bg-[#e3e9f3]"
+                  title="Close"
+                >
+                  <svg
+                    className="h-5 w-5"
+                    style={{ color: '#1976d2' }}
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M6 18L18 6M6 6l12 12"
+                    />
+                  </svg>
+                </button>
+              </div>
+            </div>
+            <div className="bg-[#fff] px-6 py-4">
+              <div className="mb-4">
+                <p className="mb-2 text-sm text-[#666]">
+                  Current interval:{' '}
+                  <span className="font-semibold text-[#1976d2]">
+                    {intervalValue}ms ({intervalValue / 1000}s)
+                  </span>
+                </p>
+                <label
+                  htmlFor="interval-value"
+                  className="mb-2 block text-sm font-medium text-[#1976d2]"
+                >
+                  Update interval (milliseconds):
+                </label>
+                <div className="flex items-center space-x-2">
+                  <input
+                    id="interval-value"
+                    type="number"
+                    min="100"
+                    step="100"
+                    value={tempIntervalValue}
+                    onChange={e =>
+                      setTempIntervalValue(parseInt(e.target.value) || 1000)
+                    }
+                    className="w-full rounded-md border border-[#e0e0e0] px-3 py-2 text-[#222] focus:border-[#1976d2] focus:outline-none focus:ring-2 focus:ring-[#1976d2]"
+                  />
+                  <span className="text-sm text-[#666]">ms</span>
+                </div>
+                <p className="mt-1 text-xs text-[#999]">
+                  Minimum: 100ms (0.1s)
+                </p>
+              </div>
+              <div className="flex items-center justify-end space-x-2">
+                <button
+                  onClick={handleIntervalCancel}
+                  className="rounded-md border border-[#e0e0e0] bg-[#fff] px-4 py-2 text-sm font-medium text-[#1976d2] transition-all duration-200 hover:bg-[#e3e9f3]"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleIntervalApply}
+                  className="rounded-md bg-[#1976d2] px-4 py-2 text-sm font-medium text-white transition-all duration-200 hover:bg-[#1565c0]"
+                >
+                  Apply
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Port Reference Table Modal */}
       {showPortTable && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
@@ -638,6 +880,16 @@ const FlowInformation: React.FC<FlowInformationProps> = ({ onClose }) => {
                 <span className="rounded-lg border border-[#e0e0e0] bg-[#fff] px-2 py-1 text-sm font-medium text-[#1976d2]">
                   {sortedFlows.length} {t('flow.flows')}
                 </span>
+                {displayMode === 'top-k' && (
+                  <span className="rounded-lg border border-[#1976d2] bg-[#1976d2] px-2 py-1 text-sm font-medium text-white">
+                    Top-K (K={kValue})
+                  </span>
+                )}
+                {displayMode === 'show-all' && (
+                  <span className="rounded-lg border border-[#ff5722] bg-[#ff5722] px-2 py-1 text-sm font-medium text-white">
+                    Show All
+                  </span>
+                )}
               </div>
               <div className="flex items-center space-x-2">
                 <button
@@ -678,6 +930,59 @@ const FlowInformation: React.FC<FlowInformationProps> = ({ onClose }) => {
                       />
                     </svg>
                   )}
+                </button>
+                <button
+                  onClick={() => {
+                    setTempKValue(kValue);
+                    setShowTopKModal(true);
+                  }}
+                  className={`rounded-md border border-[#e0e0e0] p-2 transition-all duration-200 ${
+                    displayMode === 'top-k'
+                      ? 'bg-[#1976d2] text-white hover:bg-[#1565c0]'
+                      : 'bg-[#fff] hover:bg-[#e3e9f3]'
+                  }`}
+                  title={
+                    displayMode === 'top-k'
+                      ? `Top-K Flow (K=${kValue})`
+                      : 'Top-K Flow'
+                  }
+                >
+                  <svg
+                    className="h-5 w-5"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
+                    />
+                  </svg>
+                </button>
+                <button
+                  onClick={() => {
+                    setTempIntervalValue(intervalValue);
+                    setShowIntervalModal(true);
+                  }}
+                  className="rounded-md border border-[#e0e0e0] bg-[#fff] p-2 transition-all duration-200 hover:bg-[#e3e9f3]"
+                  title={`Update Interval (${intervalValue}ms)`}
+                >
+                  <svg
+                    className="h-5 w-5"
+                    style={{ color: '#1976d2' }}
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+                    />
+                  </svg>
                 </button>
                 {polling.error && (
                   <span className="ml-2 text-xs text-red-500">Error</span>

@@ -76,6 +76,16 @@ export const get_flow_table_data = {
     fetchApi(`${NDT_API_BASE_URL}/ndt/get_detected_flow_data`),
 };
 
+export const get_top_k_flow_table_data = {
+  get_top_k_flow_table_data: async (k: number) => {
+    const queryParams = new URLSearchParams();
+    queryParams.append('k', k.toString());
+    return fetchApi(
+      `${NDT_API_BASE_URL}/ndt/get_detected_top_k_flow_data?${queryParams.toString()}`
+    );
+  },
+};
+
 export const modify_device_name = {
   modify_device_name: async ({
     vertex_type,

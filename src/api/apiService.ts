@@ -1,6 +1,7 @@
 import {
   get_graph_data,
   get_flow_table_data,
+  get_top_k_flow_table_data,
   get_cpu_utilization,
   get_memory_utilization,
   get_temperature,
@@ -14,6 +15,8 @@ export const apiService = {
   // Graph data management from the NDT api
   getGraphData: async () => get_graph_data.get_graph_data(),
   getFlowTableData: async () => get_flow_table_data.get_flow_table_data(),
+  getTopKFlowTableData: async (k: number) =>
+    get_top_k_flow_table_data.get_top_k_flow_table_data(k),
   getCPUUtilization: async () => get_cpu_utilization.get_cpu_utilization(),
   getMemoryUtilization: async () =>
     get_memory_utilization.get_memory_utilization(),

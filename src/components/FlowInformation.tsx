@@ -130,7 +130,7 @@ const FlowInformation: React.FC<FlowInformationProps> = ({ onClose }) => {
   // Top-K and Interval settings with localStorage persistence
   const [displayMode, setDisplayMode] = useLocalStorage<'top-k' | 'show-all'>(
     'flowInfo_displayMode',
-    'top-k'
+    'show-all'
   );
   const [kValue, setKValue] = useLocalStorage<number>('flowInfo_kValue', 50);
   const [intervalValue, setIntervalValue] = useLocalStorage<number>(

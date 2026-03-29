@@ -164,8 +164,6 @@ const AvailabilityFlowInformation: React.FC<AvailabilityFlowInformationProps> = 
       })
       .map(flow => ({
         ...flow,
-        estimated_flow_sending_rate_bps_in_the_last_sec:
-          flow.estimated_flow_sending_rate_bps_in_the_proceeding_1sec_timeslot,
         first_sampled_time: flow.first_sampled_time,
         latest_sampled_time: flow.latest_sampled_time || flow.timestamp,
       }));
@@ -267,7 +265,7 @@ const AvailabilityFlowInformation: React.FC<AvailabilityFlowInformationProps> = 
               case 'rate': {
                 const rate =
                   parseFloat(
-                    flow.estimated_flow_sending_rate_bps_in_the_last_sec
+                    flow.estimated_flow_sending_rate_bps_in_the_proceeding_1sec_timeslot
                   ) || 0;
                 const rateValue = parseFloat(value);
                 if (operator === '>') return rate > rateValue;
@@ -435,7 +433,7 @@ const AvailabilityFlowInformation: React.FC<AvailabilityFlowInformationProps> = 
                 case 'rate': {
                   const rate =
                     parseFloat(
-                      flow.estimated_flow_sending_rate_bps_in_the_last_sec
+                      flow.estimated_flow_sending_rate_bps_in_the_proceeding_1sec_timeslot
                     ) || 0;
                   const rateValue = parseFloat(rule.value);
                   switch (rule.operator) {
@@ -507,9 +505,13 @@ const AvailabilityFlowInformation: React.FC<AvailabilityFlowInformationProps> = 
         bValue = parseFloat(b.latest_sampled_time) || 0;
       } else if (sortField === 'sending_rate') {
         aValue =
-          parseFloat(a.estimated_flow_sending_rate_bps_in_the_last_sec) || 0;
+          parseFloat(
+            a.estimated_flow_sending_rate_bps_in_the_proceeding_1sec_timeslot
+          ) || 0;
         bValue =
-          parseFloat(b.estimated_flow_sending_rate_bps_in_the_last_sec) || 0;
+          parseFloat(
+            b.estimated_flow_sending_rate_bps_in_the_proceeding_1sec_timeslot
+          ) || 0;
       } else return 0;
 
       if (sortDirection === 'asc') {
@@ -850,7 +852,7 @@ const AvailabilityFlowInformation: React.FC<AvailabilityFlowInformationProps> = 
                       <td className="px-4 py-3 font-mono text-[#222]">
                         {formatRate(
                           parseFloat(
-                            flow.estimated_flow_sending_rate_bps_in_the_last_sec
+                            flow.estimated_flow_sending_rate_bps_in_the_proceeding_1sec_timeslot
                           ) || 0
                         )}
                       </td>

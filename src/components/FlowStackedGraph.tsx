@@ -100,7 +100,7 @@ function FlowStackedGraph({ selectedFlows, onClose }: PerLinkFlowGraphProps) {
             (flow.dst_port === undefined || f.dst_port === flow.dst_port)
         );
         return match
-          ? match.estimated_flow_sending_rate_bps_in_the_last_sec
+          ? match.estimated_flow_sending_rate_bps_in_the_proceeding_1sec_timeslot
           : 0;
       });
       return data;
@@ -165,7 +165,7 @@ function FlowStackedGraph({ selectedFlows, onClose }: PerLinkFlowGraphProps) {
               (flow.dst_port === undefined || f.dst_port === flow.dst_port)
           );
           return match
-            ? match.estimated_flow_sending_rate_bps_in_the_last_sec
+            ? match.estimated_flow_sending_rate_bps_in_the_proceeding_1sec_timeslot
             : 0;
         });
         return {
@@ -259,7 +259,7 @@ function FlowStackedGraph({ selectedFlows, onClose }: PerLinkFlowGraphProps) {
               (flow.dst_port === undefined || f.dst_port === flow.dst_port)
           );
           return match
-            ? match.estimated_flow_sending_rate_bps_in_the_last_sec
+            ? match.estimated_flow_sending_rate_bps_in_the_proceeding_1sec_timeslot
             : 0;
         });
         return data;

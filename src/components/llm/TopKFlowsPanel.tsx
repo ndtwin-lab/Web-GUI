@@ -12,7 +12,7 @@ type Flow = {
   protocol_id?: number;
   first_sampled_time?: string | number;
   latest_sampled_time?: string | number;
-  estimated_flow_sending_rate_bps_in_the_last_sec?: number;
+  estimated_flow_sending_rate_bps_in_the_proceeding_1sec_timeslot?: number;
 };
 
 interface TopKFlowsPanelProps {
@@ -200,7 +200,7 @@ const TopKFlowsPanel: React.FC<TopKFlowsPanelProps> = ({
                         <span className="text-gray-500">Sending rate:</span>{' '}
                         <span className="font-mono">
                           {formatBandwidth(
-                            flow.estimated_flow_sending_rate_bps_in_the_last_sec
+                            flow.estimated_flow_sending_rate_bps_in_the_proceeding_1sec_timeslot
                           )}
                         </span>
                       </div>

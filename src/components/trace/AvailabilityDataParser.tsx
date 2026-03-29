@@ -8,7 +8,6 @@ export interface AvailabilityFlowData {
   dst_port: number;
   protocol_id: number;
   estimated_flow_sending_rate_bps_in_the_proceeding_1sec_timeslot: string;
-  estimated_flow_sending_rate_bps_in_the_last_sec: string;
   estimated_packet_rate_in_the_proceeding_1sec_timeslot: string;
   estimated_packet_rate_in_the_last_sec: string;
   first_sampled_time: string;
@@ -140,8 +139,6 @@ export class AvailabilityDataParser {
                 protocol_id: flow.protocol_id,
                 estimated_flow_sending_rate_bps_in_the_proceeding_1sec_timeslot:
                   flow.estimated_flow_sending_rate_bps_in_the_proceeding_1sec_timeslot,
-                estimated_flow_sending_rate_bps_in_the_last_sec:
-                  flow.estimated_flow_sending_rate_bps_in_the_last_sec,
                 estimated_packet_rate_in_the_proceeding_1sec_timeslot:
                   flow.estimated_packet_rate_in_the_proceeding_1sec_timeslot,
                 estimated_packet_rate_in_the_last_sec:

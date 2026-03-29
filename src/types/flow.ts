@@ -10,7 +10,6 @@ export interface FlowSetType {
 export interface FlowDataType {
   dst_ip: number;
   dst_port: number;
-  estimated_flow_sending_rate_bps_in_the_last_sec: number;
   estimated_flow_sending_rate_bps_in_the_proceeding_1sec_timeslot: number;
   estimated_packet_rate_in_the_last_sec: number;
   estimated_packet_rate_in_the_proceeding_1sec_timeslot: number;

@@ -349,8 +349,12 @@ const LinkFlowInformation: React.FC<LinkFlowInformationProps> = ({
           b.latest_sampled_time ?? (b as any).end_time_ms ?? 0
         );
       } else if (sortField === 'sending_rate') {
-        aValue = a.estimated_flow_sending_rate_bps_in_the_last_sec ?? 0;
-        bValue = b.estimated_flow_sending_rate_bps_in_the_last_sec ?? 0;
+        aValue =
+          a.estimated_flow_sending_rate_bps_in_the_proceeding_1sec_timeslot ??
+          0;
+        bValue =
+          b.estimated_flow_sending_rate_bps_in_the_proceeding_1sec_timeslot ??
+          0;
       } else return 0;
       if (sortDirection === 'asc') {
         return aValue - bValue;
@@ -663,7 +667,7 @@ const LinkFlowInformation: React.FC<LinkFlowInformationProps> = ({
                         </td>
                         <td className="px-4 py-2 font-mono">
                           {formatRate(
-                            flow.estimated_flow_sending_rate_bps_in_the_last_sec ??
+                            flow.estimated_flow_sending_rate_bps_in_the_proceeding_1sec_timeslot ??
                               0
                           )}
                         </td>

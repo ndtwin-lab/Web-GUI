@@ -255,7 +255,7 @@ const FlowInformation: React.FC<FlowInformationProps> = ({ onClose }) => {
               }
               case 'rate': {
                 const rate =
-                  flow.estimated_flow_sending_rate_bps_in_the_last_sec;
+                  flow.estimated_flow_sending_rate_bps_in_the_proceeding_1sec_timeslot;
                 const rateValue = parseFloat(value);
                 if (operator === '>') return rate > rateValue;
                 else if (operator === '<') return rate < rateValue;
@@ -421,7 +421,7 @@ const FlowInformation: React.FC<FlowInformationProps> = ({ onClose }) => {
                 }
                 case 'rate': {
                   const rate =
-                    flow.estimated_flow_sending_rate_bps_in_the_last_sec;
+                    flow.estimated_flow_sending_rate_bps_in_the_proceeding_1sec_timeslot;
                   const rateValue = parseFloat(rule.value);
                   switch (rule.operator) {
                     case 'equals':
@@ -542,8 +542,12 @@ const FlowInformation: React.FC<FlowInformationProps> = ({ onClose }) => {
         aValue = parseToEpoch(a.latest_sampled_time);
         bValue = parseToEpoch(b.latest_sampled_time);
       } else if (sortField === 'sending_rate') {
-        aValue = a.estimated_flow_sending_rate_bps_in_the_last_sec ?? 0;
-        bValue = b.estimated_flow_sending_rate_bps_in_the_last_sec ?? 0;
+        aValue =
+          a.estimated_flow_sending_rate_bps_in_the_proceeding_1sec_timeslot ??
+          0;
+        bValue =
+          b.estimated_flow_sending_rate_bps_in_the_proceeding_1sec_timeslot ??
+          0;
       } else return 0;
 
       if (sortDirection === 'asc') {
@@ -1166,7 +1170,7 @@ const FlowInformation: React.FC<FlowInformationProps> = ({ onClose }) => {
                     </td>
                     <td className="px-4 py-3 font-mono text-[#222]">
                       {formatRate(
-                        flow.estimated_flow_sending_rate_bps_in_the_last_sec
+                        flow.estimated_flow_sending_rate_bps_in_the_proceeding_1sec_timeslot
                       )}
                     </td>
                     <td className="px-4 py-3 font-mono text-[#222]">

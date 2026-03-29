@@ -91,7 +91,7 @@ function PerLinkFlowGraph({ selectedFlows, onClose }: PerLinkFlowGraphProps) {
             (flow.dst_port === undefined || f.dst_port === flow.dst_port)
         );
         return match
-          ? match.estimated_flow_sending_rate_bps_in_the_last_sec
+          ? match.estimated_flow_sending_rate_bps_in_the_proceeding_1sec_timeslot
           : 0;
       });
       const key = `${flow.src_ip}-${flow.dst_ip}-${flow.protocol_number ?? flow.protocol_id ?? ''}-${flow.src_port ?? ''}-${flow.dst_port ?? ''}`;
